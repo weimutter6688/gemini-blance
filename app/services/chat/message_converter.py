@@ -37,13 +37,15 @@ class OpenAIMessageConverter(MessageConverter):
             parts = []
 
             if isinstance(msg["content"], str):
-                parts.append({"text": msg["content"]})
+                # 请求 gemini 接口时如果包含 content 字段但内容为空时会返回 400 错误，所以需要判断是否为空
+                if msg["content"]:
+                    parts.append({"text": msg["content"]})
             elif isinstance(msg["content"], list):
                 for content in msg["content"]:
-                    if isinstance(content, str):
+                    if isinstance(content, str) and content:
                         parts.append({"text": content})
                     elif isinstance(content, dict):
-                        if content["type"] == "text":
+                        if content["type"] == "text" and content["text"]:
                             parts.append({"text": content["text"]})
                         elif content["type"] == "image_url":
                             parts.append(_convert_image(content["image_url"]["url"]))

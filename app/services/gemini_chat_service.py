@@ -31,6 +31,12 @@ def _build_tools(model: str, payload: Dict[str, Any]) -> List[Dict[str, Any]]:
         tools.append({"code_execution": {}})
     if model.endswith("-search"):
         tools.append({"googleSearch": {}})
+
+    if payload and isinstance(payload, dict) and "tools" in payload:
+        items = payload.get("tools", [])
+        if items and isinstance(items, list):
+            tools.extend(items)
+
     return tools
 
 

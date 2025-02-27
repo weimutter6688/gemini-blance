@@ -1,5 +1,6 @@
 # app/services/chat_service.py
 
+from copy import deepcopy
 import json
 from typing import Dict, Any, AsyncGenerator, List, Union
 from app.core.logger import get_openai_logger
@@ -39,6 +40,25 @@ def _build_tools(
         tools.append({"code_execution": {}})
     if model.endswith("-search"):
         tools.append({"googleSearch": {}})
+
+    # 将 request 中的 tools 合并到 tools 中
+    if request.tools:
+        function_declarations = []
+        for tool in request.tools:
+            if not tool or not isinstance(tool, dict):
+                continue
+
+            if tool.get("type", "") == "function" and tool.get("function"):
+                function = deepcopy(tool.get("function"))
+                parameters = function.get("parameters", {})
+                if parameters.get("type") == "object" and not parameters.get("properties", {}):
+                    function.pop("parameters", None)
+
+                function_declarations.append(function)
+
+        if function_declarations:
+            tools.append({"functionDeclarations": function_declarations})
+            
     return tools
 
 
