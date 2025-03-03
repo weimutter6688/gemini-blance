@@ -63,7 +63,7 @@ async def generate_content(
     logger.info(f"Using API key: {api_key}")
 
     try:
-        response = chat_service.generate_content(
+        response = await chat_service.generate_content(
             model=model_name,
             request=request,
             api_key=api_key
@@ -122,7 +122,7 @@ async def verify_key(api_key: str):
                 )
             ]
         )
-        response = chat_service.generate_content(settings.TEST_MODEL,gemini_requset, api_key)
+        response = await chat_service.generate_content(settings.TEST_MODEL,gemini_requset, api_key)
         if response:
             return JSONResponse({"status": "valid"})
         return JSONResponse({"status": "invalid"})

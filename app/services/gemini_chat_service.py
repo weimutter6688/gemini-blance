@@ -79,10 +79,10 @@ class GeminiChatService:
         self.key_manager = key_manager
         self.response_handler = GeminiResponseHandler()
 
-    def generate_content(self, model: str, request: GeminiRequest, api_key: str) -> Dict[str, Any]:
+    async def generate_content(self, model: str, request: GeminiRequest, api_key: str) -> Dict[str, Any]:
         """生成内容"""
         payload = _build_payload(model, request)
-        response = self.api_client.generate_content(payload, model, api_key)
+        response = await self.api_client.generate_content(payload, model, api_key)
         return self.response_handler.handle_response(response, model, stream=False)
 
     async def stream_generate_content(self, model: str, request: GeminiRequest, api_key: str) -> AsyncGenerator[str, None]:
