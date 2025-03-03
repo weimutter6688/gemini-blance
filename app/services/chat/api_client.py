@@ -24,13 +24,13 @@ class GeminiApiClient(ApiClient):
         self.base_url = base_url
         self.timeout = timeout
 
-    def generate_content(self, payload: Dict[str, Any], model: str, api_key: str) -> Dict[str, Any]:
+    async def generate_content(self, payload: Dict[str, Any], model: str, api_key: str) -> Dict[str, Any]:
         timeout = httpx.Timeout(self.timeout, read=self.timeout)
         if model.endswith("-search"):
             model = model[:-7]
-        with httpx.Client(timeout=timeout) as client:
+        async with httpx.AsyncClient(timeout=timeout) as client:
             url = f"{self.base_url}/models/{model}:generateContent?key={api_key}"
-            response = client.post(url, json=payload)
+            response = await client.post(url, json=payload)
             if response.status_code != 200:
                 error_content = response.text
                 raise Exception(f"API call failed with status code {response.status_code}, {error_content}")
