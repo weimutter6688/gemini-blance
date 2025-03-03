@@ -137,13 +137,13 @@ class OpenAIChatService:
 
         if request.stream:
             return self._handle_stream_completion(request.model, payload, api_key)
-        return self._handle_normal_completion(request.model, payload, api_key)
+        return await self._handle_normal_completion(request.model, payload, api_key)
 
-    def _handle_normal_completion(
+    async def _handle_normal_completion(
             self, model: str, payload: Dict[str, Any], api_key: str
     ) -> Dict[str, Any]:
         """处理普通聊天完成"""
-        response = self.api_client.generate_content(payload, model, api_key)
+        response = await self.api_client.generate_content(payload, model, api_key)
         return self.response_handler.handle_response(
             response, model, stream=False, finish_reason="stop"
         )
