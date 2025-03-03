@@ -36,10 +36,17 @@ class OpenAIMessageConverter(MessageConverter):
         converted_messages = []
         system_instruction = None
 
-        for msg in messages:
+        for idx, msg in enumerate(messages):
             role = msg.get("role", "")
             if role not in SUPPORTED_ROLES:
-                role = "model"
+                if role == "tool":
+                    role = "user"
+                else:
+                    # 如果是最后一条消息，则认为是用户消息
+                    if idx == len(messages) - 1:
+                        role = "user"
+                    else:
+                        role = "model"
 
             parts = []
             if isinstance(msg["content"], str) and msg["content"]:

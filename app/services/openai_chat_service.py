@@ -57,7 +57,14 @@ def _build_tools(
                 function_declarations.append(function)
 
         if function_declarations:
-            tools.append({"functionDeclarations": function_declarations})
+            # 按照 function 的 name 去重
+            names, functions = set(), []
+            for item in function_declarations:
+                if item.get("name") not in names:
+                    names.add(item.get("name"))
+                    functions.append(item)
+
+            tools.append({"functionDeclarations": functions})
             
     return tools
 
