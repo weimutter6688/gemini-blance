@@ -13,8 +13,6 @@ ENV BASE_URL=https://generativelanguage.googleapis.com/v1beta
 ENV TOOLS_CODE_EXECUTION_ENABLED=true
 ENV MODEL_SEARCH='["gemini-2.0-flash-exp"]'
 
-COPY ./api_keys.txt /app
-
 # Expose port
 EXPOSE 8000
 
