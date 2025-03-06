@@ -4,6 +4,7 @@ import asyncio
 import math
 from typing import Any, List, AsyncGenerator, Callable
 from app.core.logger import get_openai_logger, get_gemini_logger
+from app.core.config import settings
 
 logger_openai = get_openai_logger()
 logger_gemini = get_gemini_logger()
@@ -112,5 +113,20 @@ class StreamOptimizer:
 
 
 # 创建默认的优化器实例，可以直接导入使用
-openai_optimizer = StreamOptimizer(logger=logger_openai)
-gemini_optimizer = StreamOptimizer(logger=logger_gemini)
+openai_optimizer = StreamOptimizer(
+    logger=logger_openai,
+    min_delay=settings.STREAM_MIN_DELAY,
+    max_delay=settings.STREAM_MAX_DELAY,
+    short_text_threshold=settings.STREAM_SHORT_TEXT_THRESHOLD,
+    long_text_threshold=settings.STREAM_LONG_TEXT_THRESHOLD,
+    chunk_size=settings.STREAM_CHUNK_SIZE
+)
+
+gemini_optimizer = StreamOptimizer(
+    logger=logger_gemini,
+    min_delay=settings.STREAM_MIN_DELAY,
+    max_delay=settings.STREAM_MAX_DELAY,
+    short_text_threshold=settings.STREAM_SHORT_TEXT_THRESHOLD,
+    long_text_threshold=settings.STREAM_LONG_TEXT_THRESHOLD,
+    chunk_size=settings.STREAM_CHUNK_SIZE
+)

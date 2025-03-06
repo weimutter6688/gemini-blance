@@ -17,6 +17,13 @@ class Settings(BaseSettings):
     UPLOAD_PROVIDER: str = "smms"
     SMMS_SECRET_TOKEN: str = ""
     TEST_MODEL: str = "gemini-1.5-flash"
+    
+    # 流式输出优化器配置
+    STREAM_MIN_DELAY: float = 0.016
+    STREAM_MAX_DELAY: float = 0.024
+    STREAM_SHORT_TEXT_THRESHOLD: int = 10
+    STREAM_LONG_TEXT_THRESHOLD: int = 50
+    STREAM_CHUNK_SIZE: int = 5
 
     def __init__(self):
         super().__init__()

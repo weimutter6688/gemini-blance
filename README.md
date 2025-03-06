@@ -76,6 +76,13 @@
     # 图片上传配置
     UPLOAD_PROVIDER="smms"  # 图片上传提供商，目前支持smms
     SMMS_SECRET_TOKEN="your-smms-token"  # SM.MS图床的API Token
+
+    # stream_optimizer 相关配置
+    STREAM_MIN_DELAY=0.016
+    STREAM_MAX_DELAY=0.024
+    STREAM_SHORT_TEXT_THRESHOLD=10
+    STREAM_LONG_TEXT_THRESHOLD=50
+    STREAM_CHUNK_SIZE=5
     ```
 
    ### 配置说明
@@ -135,6 +142,24 @@
     - `SMMS_SECRET_TOKEN`: SM.MS API Token
       - 用途: 用于图片上传到 SM.MS 图床
       - 获取方式: 需要在 SM.MS 官网注册并获取
+
+   #### 流式输出优化配置
+
+    - `STREAM_MIN_DELAY`: 最小延迟时间
+      - 默认值: `0.016`（秒）
+      - 说明: 长文本输出时使用的最小延迟时间，值越小输出速度越快
+    - `STREAM_MAX_DELAY`: 最大延迟时间
+      - 默认值: `0.024`（秒）
+      - 说明: 短文本输出时使用的最大延迟时间，值越大输出速度越慢
+    - `STREAM_SHORT_TEXT_THRESHOLD`: 短文本阈值
+      - 默认值: `10`（字符）
+      - 说明: 小于此长度的文本被视为短文本，将使用最大延迟输出
+    - `STREAM_LONG_TEXT_THRESHOLD`: 长文本阈值
+      - 默认值: `50`（字符）
+      - 说明: 大于此长度的文本被视为长文本，将使用最小延迟并分块输出
+    - `STREAM_CHUNK_SIZE`: 长文本分块大小
+      - 默认值: `5`（字符）
+      - 说明: 长文本分块输出时，每个块的大小
 
 ### ▶️ 运行
 
