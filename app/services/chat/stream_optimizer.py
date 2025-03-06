@@ -20,8 +20,8 @@ class StreamOptimizer:
                  min_delay: float = 0.016, 
                  max_delay: float = 0.024,
                  short_text_threshold: int = 10,
-                 long_text_threshold: int = 100,
-                 chunk_size: int = 10):
+                 long_text_threshold: int = 50,
+                 chunk_size: int = 5):
         """初始化流式输出优化器
         
         参数:
