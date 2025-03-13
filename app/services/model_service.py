@@ -7,8 +7,9 @@ from app.core.config import settings
 logger = get_model_logger()
 
 class ModelService:
-    def __init__(self, model_search: list):
+    def __init__(self, model_search: list, model_image: list):
         self.model_search = model_search
+        self.model_image = model_image
         self.base_url = "https://generativelanguage.googleapis.com/v1beta"
 
     def get_gemini_models(self, api_key: str) -> Optional[Dict[str, Any]]:
@@ -57,6 +58,10 @@ class ModelService:
                 search_model = openai_model.copy()
                 search_model["id"] = f"{model_id}-search"
                 openai_format["data"].append(search_model)
+            if model_id in self.model_image:
+                image_model = openai_model.copy()
+                image_model["id"] = f"{model_id}-image"
+                openai_format["data"].append(image_model)
 
         if settings.CREATE_IMAGE_MODEL:
             image_model = openai_model.copy()

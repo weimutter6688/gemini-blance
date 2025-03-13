@@ -23,7 +23,7 @@ async def get_key_manager():
 async def get_next_working_key_wrapper(key_manager: KeyManager = Depends(get_key_manager)):
     return await key_manager.get_next_working_key()
 
-model_service = ModelService(settings.MODEL_SEARCH)
+model_service = ModelService(settings.MODEL_SEARCH,settings.MODEL_IMAGE)
 
 
 @router.get("/models")
@@ -39,6 +39,12 @@ async def list_models(_=Depends(security_service.verify_key),
     models_json["models"].append({"name": "models/gemini-2.0-flash-exp-search", "version": "2.0",
                                   "displayName": "Gemini 2.0 Flash Search Experimental",
                                   "description": "Gemini 2.0 Flash Search Experimental", "inputTokenLimit": 32767,
+                                  "outputTokenLimit": 8192,
+                                  "supportedGenerationMethods": ["generateContent", "countTokens"], "temperature": 1,
+                                  "topP": 0.95, "topK": 64, "maxTemperature": 2})
+    models_json["models"].append({"name": "models/gemini-2.0-flash-exp-image", "version": "2.0",
+                                  "displayName": "Gemini 2.0 Flash Image Experimental",
+                                  "description": "Gemini 2.0 Flash Image Experimental", "inputTokenLimit": 32767,
                                   "outputTokenLimit": 8192,
                                   "supportedGenerationMethods": ["generateContent", "countTokens"], "temperature": 1,
                                   "topP": 0.95, "topK": 64, "maxTemperature": 2})

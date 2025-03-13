@@ -28,6 +28,8 @@ class GeminiApiClient(ApiClient):
         timeout = httpx.Timeout(self.timeout, read=self.timeout)
         if model.endswith("-search"):
             model = model[:-7]
+        if model.endswith("-image"):
+            model = model[:-6]
         async with httpx.AsyncClient(timeout=timeout) as client:
             url = f"{self.base_url}/models/{model}:generateContent?key={api_key}"
             response = await client.post(url, json=payload)
@@ -40,6 +42,8 @@ class GeminiApiClient(ApiClient):
         timeout = httpx.Timeout(self.timeout, read=self.timeout)
         if model.endswith("-search"):
             model = model[:-7]
+        if model.endswith("-image"):
+            model = model[:-6]
         async with httpx.AsyncClient(timeout=timeout) as client:
             url = f"{self.base_url}/models/{model}:streamGenerateContent?alt=sse&key={api_key}"
             async with client.stream(method="POST", url=url, json=payload) as response:

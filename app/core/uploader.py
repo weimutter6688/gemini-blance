@@ -149,6 +149,116 @@ class QiniuUploader(ImageUploader):
         pass
     
     
+class PicGoUploader(ImageUploader):
+    """Chevereto API 图片上传器"""
+    
+    def __init__(self, api_key: str, api_url: str = "https://www.picgo.net/api/1/upload"):
+        """
+        初始化 Chevereto 上传器
+        
+        Args:
+            api_key: Chevereto API 密钥
+            api_url: Chevereto API 上传地址
+        """
+        self.api_key = api_key
+        self.api_url = api_url
+        
+    def upload(self, file: bytes, filename: str) -> UploadResponse:
+        """
+        上传图片到 Chevereto 服务
+        
+        Args:
+            file: 图片文件二进制数据
+            filename: 文件名
+            
+        Returns:
+            UploadResponse: 上传响应对象
+            
+        Raises:
+            UploadError: 上传失败时抛出异常
+        """
+        try:
+            # 准备请求头
+            headers = {
+                "X-API-Key": self.api_key
+            }
+            
+            # 准备文件数据
+            files = {
+                "source": (filename, file)
+            }
+            
+            # 发送请求
+            response = requests.post(
+                self.api_url,
+                headers=headers,
+                files=files
+            )
+            
+            # 检查响应状态
+            response.raise_for_status()
+            
+            # 解析响应
+            result = response.json()
+            
+            # 验证上传是否成功
+            if result.get("status_code") != 200:
+                error_message = "Upload failed"
+                if "error" in result:
+                    error_message = result["error"].get("message", error_message)
+                raise UploadError(
+                    message=error_message,
+                    error_type=UploadErrorType.SERVER_ERROR,
+                    status_code=result.get("status_code"),
+                    details=result.get("error")
+                )
+                
+            # 从响应中提取图片信息
+            image_data = result.get("image", {})
+            
+            # 构建图片元数据
+            image_metadata = ImageMetadata(
+                width=image_data.get("width", 0),
+                height=image_data.get("height", 0),
+                filename=image_data.get("filename", filename),
+                size=image_data.get("size", 0),
+                url=image_data.get("url", ""),
+                delete_url=image_data.get("delete_url", None)
+            )
+            
+            return UploadResponse(
+                success=True,
+                code="success",
+                message=result.get("success", {}).get("message", "Upload success"),
+                data=image_metadata
+            )
+            
+        except requests.RequestException as e:
+            # 处理网络请求相关错误
+            raise UploadError(
+                message=f"Upload request failed: {str(e)}",
+                error_type=UploadErrorType.NETWORK_ERROR,
+                original_error=e
+            )
+        except (KeyError, ValueError, TypeError) as e:
+            # 处理响应解析错误
+            raise UploadError(
+                message=f"Invalid response format: {str(e)}",
+                error_type=UploadErrorType.PARSE_ERROR,
+                original_error=e
+            )
+        except UploadError:
+            # 重新抛出已经是 UploadError 类型的异常
+            raise
+        except Exception as e:
+            # 处理其他未预期的错误
+            raise UploadError(
+                message=f"Upload failed: {str(e)}",
+                error_type=UploadErrorType.UNKNOWN,
+                original_error=e
+            )
+
+    
 class ImageUploaderFactory:
     @staticmethod
     def create(provider: str, **credentials) -> ImageUploader:
@@ -159,5 +269,7 @@ class ImageUploaderFactory:
                 credentials["access_key"], 
                 credentials["secret_key"]
             )
+        elif provider == "picgo":
+            api_url = credentials.get("api_url", "https://www.picgo.net/api/1/upload")
+            return PicGoUploader(credentials["api_key"], api_url)
         raise ValueError(f"Unknown provider: {provider}")
-    

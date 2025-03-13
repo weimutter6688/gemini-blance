@@ -17,7 +17,7 @@ logger = get_openai_logger()
 
 # 初始化服务
 security_service = SecurityService(settings.ALLOWED_TOKENS, settings.AUTH_TOKEN)
-model_service = ModelService(settings.MODEL_SEARCH)
+model_service = ModelService(settings.MODEL_SEARCH,settings.MODEL_IMAGE)
 embedding_service = EmbeddingService(settings.BASE_URL)
 image_create_service = ImageCreateService()
 

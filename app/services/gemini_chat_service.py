@@ -62,14 +62,19 @@ def _get_safety_settings(model: str) -> List[Dict[str, str]]:
 
 def _build_payload(model: str, request: GeminiRequest) -> Dict[str, Any]:
     """构建请求payload"""
-    payload = request.model_dump()
-    return {
-        "contents": payload.get("contents", []),
-        "tools": _build_tools(model, payload),
+    request_dict = request.model_dump()
+    payload = {
+        "contents": request_dict.get("contents", []),
+        "tools": _build_tools(model, request_dict),
         "safetySettings": _get_safety_settings(model),
-        "generationConfig": payload.get("generationConfig", {}),
-        "systemInstruction": payload.get("systemInstruction", [])
+        "generationConfig": request_dict.get("generationConfig", {}),
+        "systemInstruction": request_dict.get("systemInstruction", "")
     }
+    
+    if model.endswith("-image"):
+        payload.pop("systemInstruction")
+        payload["generationConfig"]["responseModalities"] = ["Text","Image"]
+    return payload
 
 
 class GeminiChatService:

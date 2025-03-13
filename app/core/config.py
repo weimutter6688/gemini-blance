@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     ALLOWED_TOKENS: List[str]
     BASE_URL: str = "https://generativelanguage.googleapis.com/v1beta"
     MODEL_SEARCH: List[str] = ["gemini-2.0-flash-exp"]
+    MODEL_IMAGE: List[str] = ["gemini-2.0-flash-exp"]
     TOOLS_CODE_EXECUTION_ENABLED: bool = False
     SHOW_SEARCH_LINK: bool = True
     SHOW_THINKING_PROCESS: bool = True
@@ -16,6 +17,7 @@ class Settings(BaseSettings):
     CREATE_IMAGE_MODEL: str = "imagen-3.0-generate-002"
     UPLOAD_PROVIDER: str = "smms"
     SMMS_SECRET_TOKEN: str = ""
+    PICGO_API_KEY: str = ""
     TEST_MODEL: str = "gemini-1.5-flash"
     
     # 流式输出优化器配置

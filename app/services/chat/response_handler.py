@@ -1,5 +1,6 @@
 # app/services/chat/response_handler.py
 
+import base64
 import json
 import random
 import string
@@ -8,6 +9,7 @@ from typing import Dict, Any, List, Optional
 import time
 import uuid
 from app.core.config import settings
+from app.core.uploader import ImageUploaderFactory
 
 
 class ResponseHandler(ABC):
@@ -135,67 +137,8 @@ def _extract_result(response: Dict[str, Any], model: str, stream: bool = False, 
             candidate = response["candidates"][0]
             content = candidate.get("content", {})
             parts = content.get("parts", [])
-            # if "thinking" in model:
-            #     if settings.SHOW_THINKING_PROCESS:
-            #         if len(parts) == 1:
-            #             if self.thinking_first:
-            #                 self.thinking_first = False
-            #                 self.thinking_status = True
-            #                 text = "> thinking\n\n" + parts[0].get("text")
-            #             else:
-            #                 text = parts[0].get("text")
-
-            #         if len(parts) == 2:
-            #             self.thinking_status = False
-            #             if self.thinking_first:
-            #                 self.thinking_first = False
-            #                 text = (
-            #                     "> thinking\n\n"
-            #                     + parts[0].get("text")
-            #                     + "\n\n---\n> output\n\n"
-            #                     + parts[1].get("text")
-            #                 )
-            #             else:
-            #                 text = (
-            #                     parts[0].get("text")
-            #                     + "\n\n---\n> output\n\n"
-            #                     + parts[1].get("text")
-            #                 )
-            #     else:
-            #         if len(parts) == 1:
-            #             if self.thinking_first:
-            #                 self.thinking_first = False
-            #                 self.thinking_status = True
-            #                 text = ""
-            #             elif self.thinking_status:
-            #                 text = ""
-            #             else:
-            #                 text = parts[0].get("text")
-
-            #         if len(parts) == 2:
-            #             self.thinking_status = False
-            #             if self.thinking_first:
-            #                 self.thinking_first = False
-            #                 text = parts[1].get("text")
-            #             else:
-            #                 text = parts[1].get("text")
-            # else:
-            #     if "text" in parts[0]:
-            #         text = parts[0].get("text")
-            #     elif "executableCode" in parts[0]:
-            #         text = _format_code_block(parts[0]["executableCode"])
-            #     elif "codeExecution" in parts[0]:
-            #         text = _format_code_block(parts[0]["codeExecution"])
-            #     elif "executableCodeResult" in parts[0]:
-            #         text = _format_execution_result(
-            #             parts[0]["executableCodeResult"]
-            #         )
-            #     elif "codeExecutionResult" in parts[0]:
-            #         text = _format_execution_result(
-            #             parts[0]["codeExecutionResult"]
-            #         )
-            #     else:
-            #         text = ""
+            if not parts:
+                return "", []
             if "text" in parts[0]:
                 text = parts[0].get("text")
             elif "executableCode" in parts[0]:
@@ -210,6 +153,8 @@ def _extract_result(response: Dict[str, Any], model: str, stream: bool = False, 
                 text = _format_execution_result(
                     parts[0]["codeExecutionResult"]
                 )
+            elif "inlineData" in parts[0]:
+                text = _extract_image_data(parts[0])
             else:
                 text = ""
             text = _add_search_link_text(model, candidate, text)
@@ -235,14 +180,38 @@ def _extract_result(response: Dict[str, Any], model: str, stream: bool = False, 
                         text = candidate["content"]["parts"][0]["text"]
             else:
                 text = ""
-                for part in candidate["content"]["parts"]:
-                    text += part.get("text", "")
+                if "parts" in candidate["content"]:
+                    for part in candidate["content"]["parts"]:
+                        if "text" in part:
+                            text += part["text"]
+                        elif "inlineData" in part:
+                            text += _extract_image_data(part)
+
+
             text = _add_search_link_text(model, candidate, text)
             tool_calls = _extract_tool_calls(candidate["content"]["parts"], gemini_format)
         else:
             text = "暂无返回"
     return text, tool_calls
 
+def _extract_image_data(part: dict) -> str:
+    image_uploader = None
+    if settings.UPLOAD_PROVIDER == "smms":
+        image_uploader = ImageUploaderFactory.create(provider=settings.UPLOAD_PROVIDER,api_key=settings.SMMS_SECRET_TOKEN)
+    elif settings.UPLOAD_PROVIDER == "picgo":
+        image_uploader = ImageUploaderFactory.create(provider=settings.UPLOAD_PROVIDER,api_key=settings.PICGO_API_KEY)
+    current_date = time.strftime("%Y/%m/%d")
+    filename = f"{current_date}/{uuid.uuid4().hex[:8]}.png"
+    base64_data = part["inlineData"]["data"]
+                #将base64_data转成bytes数组
+    bytes_data = base64.b64decode(base64_data)
+    upload_response = image_uploader.upload(bytes_data,filename)
+    if upload_response.success:
+        text = f"\n![image]({upload_response.data.url})\n"
+    else:
+        text = ""
+    return text
+    
 def _extract_tool_calls(parts: List[Dict[str, Any]], gemini_format: bool) -> List[Dict[str, Any]]:
     """提取工具调用信息"""
     if not parts or not isinstance(parts, list):
