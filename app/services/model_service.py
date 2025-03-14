@@ -68,3 +68,17 @@ class ModelService:
             image_model["id"] = f"{settings.CREATE_IMAGE_MODEL}-chat"
             openai_format["data"].append(image_model)
         return openai_format
+
+    def check_model_support(self, model: str) -> bool:
+        if not model or not isinstance(model, str):
+            return False
+
+        model = model.strip()
+        if model.endswith("-search"):
+            model = model[:-7]
+            return model in settings.MODEL_SEARCH
+        if model.endswith("-image"):
+            model = model[:-6]
+            return model in settings.MODEL_IMAGE
+
+        return True

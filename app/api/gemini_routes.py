@@ -90,6 +90,9 @@ async def generate_content(
     logger.info(f"Request: \n{request.model_dump_json(indent=2)}")
     logger.info(f"Using API key: {api_key}")
 
+    if not model_service.check_model_support(model_name):
+        raise HTTPException(status_code=400, detail=f"Model {model_name} is not supported")
+
     try:
         response = await chat_service.generate_content(
             model=model_name,
@@ -119,6 +122,9 @@ async def stream_generate_content(
     logger.info(f"Handling Gemini streaming content generation for model: {model_name}")
     logger.info(f"Request: \n{request.model_dump_json(indent=2)}")
     logger.info(f"Using API key: {api_key}")
+
+    if not model_service.check_model_support(model_name):
+        raise HTTPException(status_code=400, detail=f"Model {model_name} is not supported")
 
     try:
         response_stream = chat_service.stream_generate_content(

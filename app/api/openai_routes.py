@@ -61,6 +61,10 @@ async def chat_completion(
     logger.info(f"Handling chat completion request for model: {request.model}")
     logger.info(f"Request: \n{request.model_dump_json(indent=2)}")
     logger.info(f"Using API key: {api_key}")
+
+    if not model_service.check_model_support(request.model):
+        raise HTTPException(status_code=400, detail=f"Model {request.model} is not supported")
+       
     try:
         # 如果model是imagen3,使用paid_key
         if request.model == f"{settings.CREATE_IMAGE_MODEL}-chat":

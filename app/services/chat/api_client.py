@@ -24,12 +24,18 @@ class GeminiApiClient(ApiClient):
         self.base_url = base_url
         self.timeout = timeout
 
-    async def generate_content(self, payload: Dict[str, Any], model: str, api_key: str) -> Dict[str, Any]:
-        timeout = httpx.Timeout(self.timeout, read=self.timeout)
+    def _get_real_model(self, model: str) -> str:
         if model.endswith("-search"):
             model = model[:-7]
         if model.endswith("-image"):
             model = model[:-6]
+
+        return model
+
+    async def generate_content(self, payload: Dict[str, Any], model: str, api_key: str) -> Dict[str, Any]:
+        timeout = httpx.Timeout(self.timeout, read=self.timeout)
+        model = self._get_real_model(model)
+
         async with httpx.AsyncClient(timeout=timeout) as client:
             url = f"{self.base_url}/models/{model}:generateContent?key={api_key}"
             response = await client.post(url, json=payload)
@@ -40,10 +46,8 @@ class GeminiApiClient(ApiClient):
 
     async def stream_generate_content(self, payload: Dict[str, Any], model: str, api_key: str) -> AsyncGenerator[str, None]:
         timeout = httpx.Timeout(self.timeout, read=self.timeout)
-        if model.endswith("-search"):
-            model = model[:-7]
-        if model.endswith("-image"):
-            model = model[:-6]
+        model = self._get_real_model(model)
+        
         async with httpx.AsyncClient(timeout=timeout) as client:
             url = f"{self.base_url}/models/{model}:streamGenerateContent?alt=sse&key={api_key}"
             async with client.stream(method="POST", url=url, json=payload) as response:
