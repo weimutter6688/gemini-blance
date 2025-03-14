@@ -207,7 +207,7 @@ def _extract_image_data(part: dict) -> str:
     bytes_data = base64.b64decode(base64_data)
     upload_response = image_uploader.upload(bytes_data,filename)
     if upload_response.success:
-        text = f"\n![image]({upload_response.data.url})\n"
+        text = f"![image]({upload_response.data.url})"
     else:
         text = ""
     return text
