@@ -36,18 +36,40 @@ async def list_models(_=Depends(security_service.verify_key),
     api_key = await key_manager.get_next_working_key()
     logger.info(f"Using API key: {api_key}")
     models_json = model_service.get_gemini_models(api_key)
-    models_json["models"].append({"name": "models/gemini-2.0-flash-exp-search", "version": "2.0",
-                                  "displayName": "Gemini 2.0 Flash Search Experimental",
-                                  "description": "Gemini 2.0 Flash Search Experimental", "inputTokenLimit": 32767,
-                                  "outputTokenLimit": 8192,
-                                  "supportedGenerationMethods": ["generateContent", "countTokens"], "temperature": 1,
-                                  "topP": 0.95, "topK": 64, "maxTemperature": 2})
-    models_json["models"].append({"name": "models/gemini-2.0-flash-exp-image", "version": "2.0",
-                                  "displayName": "Gemini 2.0 Flash Image Experimental",
-                                  "description": "Gemini 2.0 Flash Image Experimental", "inputTokenLimit": 32767,
-                                  "outputTokenLimit": 8192,
-                                  "supportedGenerationMethods": ["generateContent", "countTokens"], "temperature": 1,
-                                  "topP": 0.95, "topK": 64, "maxTemperature": 2})
+
+    # 模型名称以及对应的详细信息
+    model_mapping = {x.get("name", "").split("/", maxsplit=1)[1]: x for x in models_json["models"]}
+
+    # 添加搜索模型
+    if settings.MODEL_SEARCH:
+        for name in settings.MODEL_SEARCH:
+            model = model_mapping.get(name, None)
+            if not model:
+                continue
+
+            item = deepcopy(model)
+            item["name"] = f"models/{name}-search"
+            display_name = f'{item.get("displayName")} For Search'
+            item["displayName"] = display_name
+            item["description"] = display_name
+
+            models_json["models"].append(item)
+
+    # 添加图像生成模型
+    if settings.MODEL_IMAGE:
+        for name in settings.MODEL_IMAGE:
+            model = model_mapping.get(name, None)
+            if not model:
+                continue
+
+            item = deepcopy(model)
+            item["name"] = f"models/{name}-image"
+            display_name = f'{item.get("displayName")} For Image'
+            item["displayName"] = display_name
+            item["description"] = display_name
+
+            models_json["models"].append(item)
+            
     return models_json
 
 

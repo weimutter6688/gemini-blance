@@ -34,7 +34,7 @@ class OpenAIMessageConverter(MessageConverter):
 
     def convert(self, messages: List[Dict[str, Any]]) -> tuple[List[Dict[str, Any]], Optional[Dict[str, Any]]]:
         converted_messages = []
-        system_instruction = None
+        system_instruction_parts = []
 
         for idx, msg in enumerate(messages):
             role = msg.get("role", "")
@@ -64,8 +64,16 @@ class OpenAIMessageConverter(MessageConverter):
 
             if parts:
                 if role == "system":
-                    system_instruction = {"role": "system", "parts": parts}
+                    system_instruction_parts.extend(parts)
                 else:
                     converted_messages.append({"role": role, "parts": parts})
 
+        system_instruction = (
+            None
+            if not system_instruction_parts
+            else {
+                "role": "system",
+                "parts": system_instruction_parts,
+            }
+        )
         return converted_messages, system_instruction
