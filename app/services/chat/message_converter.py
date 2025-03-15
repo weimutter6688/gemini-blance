@@ -3,9 +3,11 @@
 from abc import ABC, abstractmethod
 import re
 from typing import Any, Dict, List, Optional
+import requests
+import base64
 
 SUPPORTED_ROLES = ["user", "model", "system"]
-IMAGE_URL_PATTERN = r'(https://img\.picgo\.net/[^\s)\]\"\']+)'
+IMAGE_URL_PATTERN = r'\[image\]\((.*?)\)'
 
 
 class MessageConverter(ABC):
@@ -39,8 +41,6 @@ def _convert_image_to_base64(url: str) -> str:
     Returns:
         str: base64编码的图片数据
     """
-    import requests
-    import base64
     response = requests.get(url)
     if response.status_code == 200:
         # 将图片内容转换为base64
