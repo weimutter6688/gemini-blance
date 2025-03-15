@@ -17,13 +17,36 @@ class MessageConverter(ABC):
     def convert(self, messages: List[Dict[str, Any]]) -> tuple[List[Dict[str, Any]], Optional[Dict[str, Any]]]:
         pass
 
+def _get_mime_type_and_data(base64_string):
+    """
+    从 base64 字符串中提取 MIME 类型和数据。
+    
+    参数:
+        base64_string (str): 可能包含 MIME 类型信息的 base64 字符串
+        
+    返回:
+        tuple: (mime_type, encoded_data)
+    """
+    # 检查字符串是否以 "data:" 格式开始
+    if base64_string.startswith('data:'):
+        # 提取 MIME 类型和数据
+        pattern = r'data:([^;]+);base64,(.+)'
+        match = re.match(pattern, base64_string)
+        if match:
+            mime_type = match.group(1)
+            encoded_data = match.group(2)
+            return mime_type, encoded_data
+    
+    # 如果不是预期格式，假定它只是数据部分
+    return None, base64_string
 
 def _convert_image(image_url: str) -> Dict[str, Any]:
     if image_url.startswith("data:image"):
+        mime_type, encoded_data = _get_mime_type_and_data(image_url)
         return {
             "inline_data": {
-                "mime_type": "image/jpeg",
-                "data": image_url.split(",")[1]
+                "mime_type": mime_type,
+                "data": encoded_data
             }
         }
     return {
@@ -70,11 +93,11 @@ def _process_text_with_image(text: str) -> List[Dict[str, Any]]:
             base64_data = _convert_image_to_base64(img_url)
             parts.append({
                 "inlineData": {
-                    "mimeType": "image/jpeg",
+                    "mimeType": "image/png",
                     "data": base64_data
                 }
             })
-        except Exception as e:
+        except Exception:
             # 如果转换失败，回退到文本模式
             parts.append({"text": text})
     else:
@@ -103,8 +126,8 @@ class OpenAIMessageConverter(MessageConverter):
                         role = "model"
 
             parts = []
-            # 特别处理assistant的消息，按\n\n分割
-            if role == "assistant" and isinstance(msg["content"], str) and msg["content"]:
+            # 特别处理最后一个assistant的消息，按\n\n分割
+            if idx == len(messages) - 1 and role == "assistant" and isinstance(msg["content"], str) and msg["content"]:
                 # 按\n\n分割消息
                 content_parts = msg["content"].split("\n\n")
                 for part in content_parts:
