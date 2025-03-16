@@ -35,7 +35,7 @@ def _build_tools(
 
     if (
             settings.TOOLS_CODE_EXECUTION_ENABLED
-            and not (model.endswith("-search") or "-thinking" in model or model.endswith("-image"))
+            and not (model.endswith("-search") or "-thinking" in model or model.endswith("-image") or model.endswith("-image-generation"))
             and not _has_image_parts(messages)
     ):
         tools.append({"code_execution": {}})
@@ -110,7 +110,7 @@ def _build_payload(
         "tools": _build_tools(request, messages),
         "safetySettings": _get_safety_settings(request.model),
     }
-    if request.model.endswith("-image"):
+    if request.model.endswith("-image") or request.model.endswith("-image-generation"):
         payload["generationConfig"]["responseModalities"] = ["Text","Image"]
         
     if (
@@ -119,6 +119,7 @@ def _build_payload(
         and instruction.get("role") == "system"
         and instruction.get("parts")
         and not request.model.endswith("-image")
+        and not request.model.endswith("-image-generation")
     ):
         payload["systemInstruction"] = instruction
 
