@@ -96,11 +96,6 @@ class ImageCreateService:
             for index, generated_image in enumerate(response.generated_images):
                 image_data = generated_image.image.image_bytes
                 image_uploader = None
-                if settings.UPLOAD_PROVIDER  == "smms":
-                    image_uploader = ImageUploaderFactory.create(provider=settings.UPLOAD_PROVIDER,api_key=settings.SMMS_SECRET_TOKEN)
-                    current_date = time.strftime("%Y/%m/%d")
-                    filename = f"{current_date}/{uuid.uuid4().hex[:8]}.png"
-                    upload_response = image_uploader.upload(image_data,filename)
                     
                 if request.response_format == "b64_json":
                     base64_image = base64.b64encode(image_data).decode('utf-8')
@@ -109,6 +104,30 @@ class ImageCreateService:
                         "revised_prompt": request.prompt
                     })
                 else:
+                    current_date = time.strftime("%Y/%m/%d")
+                    filename = f"{current_date}/{uuid.uuid4().hex[:8]}.png"
+                    
+                    if settings.UPLOAD_PROVIDER == "smms":
+                        image_uploader = ImageUploaderFactory.create(
+                            provider=settings.UPLOAD_PROVIDER,
+                            api_key=settings.SMMS_SECRET_TOKEN
+                        )
+                    elif settings.UPLOAD_PROVIDER == "picgo":
+                        image_uploader = ImageUploaderFactory.create(
+                            provider=settings.UPLOAD_PROVIDER,
+                            api_key=settings.PICGO_API_KEY
+                        )
+                    elif settings.UPLOAD_PROVIDER == "cloudflare_imgbed":
+                        image_uploader = ImageUploaderFactory.create(
+                            provider=settings.UPLOAD_PROVIDER,
+                            base_url=settings.CLOUDFLARE_IMGBED_URL,
+                            auth_code=settings.CLOUDFLARE_IMGBED_AUTH_CODE
+                        )
+                    else:
+                        raise ValueError(f"Unsupported upload provider: {settings.UPLOAD_PROVIDER}")
+                    
+                    upload_response = image_uploader.upload(image_data, filename)
+
                     images_data.append({
                         "url": f"{upload_response.data.url}",
                         "revised_prompt": request.prompt

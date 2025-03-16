@@ -74,8 +74,11 @@
     CREATE_IMAGE_MODEL="imagen-3.0-generate-002"  # 图片生成模型，默认使用imagen-3.0
     
     # 图片上传配置
-    UPLOAD_PROVIDER="smms"  # 图片上传提供商，目前支持smms
+    UPLOAD_PROVIDER="smms"  # 图片上传提供商，目前支持smms、picgo、cloudflare_imgbed
     SMMS_SECRET_TOKEN="your-smms-token"  # SM.MS图床的API Token
+    PICGO_API_KEY="your-picogo-apikey"  # PicoGo图床的API Key 可在 `https://www.picgo.net/settings/api` 获取
+    CLOUDFLARE_IMGBED_URL="https://xxxxxxx.pages.dev/upload" # CloudFlare 图床上传地址，可自行搭建：`https://github.com/MarSeventh/CloudFlare-ImgBed`
+    CLOUDFLARE_IMGBED_AUTH_CODE="your-cloudflare-imgber-auth-code" # CloudFlare图床的鉴权key，可在项目后台设置，若无鉴权则可直接置空。
 
     # stream_optimizer 相关配置
     STREAM_MIN_DELAY=0.016
@@ -138,10 +141,26 @@
 
     - `UPLOAD_PROVIDER`: 图片上传服务提供商
       - 默认值: `smms`
-      - 说明: 目前支持 SM.MS 图床
+      - 可选值: `smms`, `picgo`, `cloudflare_imgbed`
+      - 说明:  用于选择图片上传的服务提供商。目前支持 SM.MS 图床, PicGo 图床, 以及 Cloudflare ImgBed。
+
     - `SMMS_SECRET_TOKEN`: SM.MS API Token
-      - 用途: 用于图片上传到 SM.MS 图床
-      - 获取方式: 需要在 SM.MS 官网注册并获取
+      - 用途: 用于图片上传到 SM.MS 图床的身份验证。
+      - 获取方式: 需要在 [SM.MS 官网](https://sm.ms/) 注册并获取。
+
+    - `PICGO_API_KEY`: PicGo API Key
+      - 用途: 用于图片上传到 PicGo 图床的身份验证。
+      - 获取方式: 可在 [PicGo 官网](https://www.picgo.net/settings/api) 的设置页面 API 选项中获取。
+
+    - `CLOUDFLARE_IMGBED_URL`: Cloudflare ImgBed 上传地址
+      - 用途:  指定 Cloudflare ImgBed 图床的上传 API 地址。
+      - 获取方式:  如果您自行搭建了 Cloudflare ImgBed 服务，请填写您的服务部署地址。参考 [Cloudflare-ImgBed 项目](https://github.com/MarSeventh/CloudFlare-ImgBed) 自行搭建。
+      - 注意:  URL 必须以 `https://` 开头，并指向 `/upload` 路径 ，例如 `https://cloudflare-imgbed-7b0.pages.dev/upload`。
+
+    - `CLOUDFLARE_IMGBED_AUTH_CODE`: Cloudflare ImgBed 鉴权 Key
+      - 用途:  用于 Cloudflare ImgBed 图床的身份验证。
+      - 说明:  如果您的 Cloudflare ImgBed 服务启用了鉴权，请填写鉴权 Key。若未启用鉴权，则留空即可。
+      - 获取方式:  在 Cloudflare ImgBed 项目的后台设置中获取，或在搭建时自行设置。
 
    #### 流式输出优化配置
 

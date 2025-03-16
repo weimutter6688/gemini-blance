@@ -18,6 +18,8 @@ class Settings(BaseSettings):
     UPLOAD_PROVIDER: str = "smms"
     SMMS_SECRET_TOKEN: str = ""
     PICGO_API_KEY: str = ""
+    CLOUDFLARE_IMGBED_URL: str = ""
+    CLOUDFLARE_IMGBED_AUTH_CODE: str = ""
     TEST_MODEL: str = "gemini-1.5-flash"
     
     # 流式输出优化器配置

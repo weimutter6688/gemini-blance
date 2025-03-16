@@ -258,6 +258,119 @@ class PicGoUploader(ImageUploader):
                 original_error=e
             )
 
+
+class CloudFlareImgBedUploader(ImageUploader):
+    """CloudFlare图床上传器"""
+    
+    def __init__(self, auth_code: str, api_url: str):
+        """
+        初始化CloudFlare图床上传器
+        
+        Args:
+            auth_code: 认证码
+            api_url: 上传API地址
+        """
+        self.auth_code = auth_code
+        self.api_url = api_url
+        
+    def upload(self, file: bytes, filename: str) -> UploadResponse:
+        """
+        上传图片到CloudFlare图床
+        
+        Args:
+            file: 图片文件二进制数据
+            filename: 文件名
+            
+        Returns:
+            UploadResponse: 上传响应对象
+            
+        Raises:
+            UploadError: 上传失败时抛出异常
+        """
+        try:
+            # 准备请求URL（添加认证码参数，如果存在）
+            if self.auth_code:
+                request_url = f"{self.api_url}?authCode={self.auth_code}"
+            else:
+                request_url = self.api_url
+            
+            # 准备文件数据
+            files = {
+                "file": (filename, file)
+            }
+            
+            # 发送请求
+            response = requests.post(
+                request_url,
+                files=files
+            )
+            
+            # 检查响应状态
+            response.raise_for_status()
+            
+            # 解析响应
+            result = response.json()
+            
+            # 验证响应格式
+            if not result or not isinstance(result, list) or len(result) == 0:
+                raise UploadError(
+                    message="Invalid response format",
+                    error_type=UploadErrorType.PARSE_ERROR
+                )
+                
+            # 获取文件URL
+            file_path = result[0].get("src")
+            if not file_path:
+                raise UploadError(
+                    message="Missing file URL in response",
+                    error_type=UploadErrorType.PARSE_ERROR
+                )
+                
+            # 构建完整URL（如果返回的是相对路径）
+            base_url = self.api_url.split("/upload")[0]
+            full_url = file_path if file_path.startswith(("http://", "https://")) else f"{base_url}{file_path}"
+                
+            # 构建图片元数据（注意：CloudFlare-ImgBed不返回所有元数据，所以部分字段为默认值）
+            image_metadata = ImageMetadata(
+                width=0,  # CloudFlare-ImgBed不返回宽度
+                height=0,  # CloudFlare-ImgBed不返回高度
+                filename=filename,
+                size=0,  # CloudFlare-ImgBed不返回大小
+                url=full_url,
+                delete_url=None  # CloudFlare-ImgBed不返回删除URL
+            )
+            
+            return UploadResponse(
+                success=True,
+                code="success",
+                message="Upload success",
+                data=image_metadata
+            )
+            
+        except requests.RequestException as e:
+            # 处理网络请求相关错误
+            raise UploadError(
+                message=f"Upload request failed: {str(e)}",
+                error_type=UploadErrorType.NETWORK_ERROR,
+                original_error=e
+            )
+        except (KeyError, ValueError, TypeError, IndexError) as e:
+            # 处理响应解析错误
+            raise UploadError(
+                message=f"Invalid response format: {str(e)}",
+                error_type=UploadErrorType.PARSE_ERROR,
+                original_error=e
+            )
+        except UploadError:
+            # 重新抛出已经是 UploadError 类型的异常
+            raise
+        except Exception as e:
+            # 处理其他未预期的错误
+            raise UploadError(
+                message=f"Upload failed: {str(e)}",
+                error_type=UploadErrorType.UNKNOWN,
+                original_error=e
+            )
     
 class ImageUploaderFactory:
     @staticmethod
@@ -272,4 +385,9 @@ class ImageUploaderFactory:
         elif provider == "picgo":
             api_url = credentials.get("api_url", "https://www.picgo.net/api/1/upload")
             return PicGoUploader(credentials["api_key"], api_url)
+        elif provider == "cloudflare_imgbed":
+            return CloudFlareImgBedUploader(
+                credentials["auth_code"],
+                credentials["base_url"]
+            )
         raise ValueError(f"Unknown provider: {provider}")
