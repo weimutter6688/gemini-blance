@@ -290,9 +290,9 @@ class CloudFlareImgBedUploader(ImageUploader):
         try:
             # 准备请求URL（添加认证码参数，如果存在）
             if self.auth_code:
-                request_url = f"{self.api_url}?authCode={self.auth_code}"
+                request_url = f"{self.api_url}?authCode={self.auth_code}&uploadNameType=origin"
             else:
-                request_url = self.api_url
+                request_url = f"{self.api_url}?uploadNameType=origin"
             
             # 准备文件数据
             files = {
