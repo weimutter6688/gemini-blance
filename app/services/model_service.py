@@ -11,6 +11,7 @@ class ModelService:
         self.model_search = model_search
         self.model_image = model_image
         self.base_url = "https://generativelanguage.googleapis.com/v1beta"
+        self.filtered_models = ["gemini-1.0-pro-vision-latest", "gemini-pro-vision"]
 
     def get_gemini_models(self, api_key: str) -> Optional[Dict[str, Any]]:
         url = f"{self.base_url}/models?key={api_key}"
@@ -43,6 +44,11 @@ class ModelService:
 
         for model in gemini_models.get("models", []):
             model_id = model["name"].split("/")[-1]
+            
+            if model_id in self.filtered_models:
+                logger.info(f"Filtered out model: {model_id}")
+                continue
+                
             openai_model = {
                 "id": model_id,
                 "object": "model",
