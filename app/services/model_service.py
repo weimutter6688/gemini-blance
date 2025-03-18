@@ -7,9 +7,9 @@ from app.core.config import settings
 logger = get_model_logger()
 
 class ModelService:
-    def __init__(self, model_search: list, model_image: list):
-        self.model_search = model_search
-        self.model_image = model_image
+    def __init__(self, search_models: list, image_models: list):
+        self.search_models = search_models
+        self.image_models = image_models
         self.base_url = "https://generativelanguage.googleapis.com/v1beta"
         self.filtered_models = settings.FILTERED_MODELS
 
@@ -65,11 +65,11 @@ class ModelService:
             }
             openai_format["data"].append(openai_model)
 
-            if model_id in self.model_search:
+            if model_id in self.search_models:
                 search_model = openai_model.copy()
                 search_model["id"] = f"{model_id}-search"
                 openai_format["data"].append(search_model)
-            if model_id in self.model_image:
+            if model_id in self.image_models:
                 image_model = openai_model.copy()
                 image_model["id"] = f"{model_id}-image"
                 openai_format["data"].append(image_model)
@@ -87,9 +87,9 @@ class ModelService:
         model = model.strip()
         if model.endswith("-search"):
             model = model[:-7]
-            return model in settings.MODEL_SEARCH
+            return model in self.search_models
         if model.endswith("-image"):
             model = model[:-6]
-            return model in settings.MODEL_IMAGE
+            return model in self.image_models
 
-        return True
+        return model not in self.filtered_models

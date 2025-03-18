@@ -6,8 +6,8 @@ class Settings(BaseSettings):
     API_KEYS: List[str]
     ALLOWED_TOKENS: List[str]
     BASE_URL: str = "https://generativelanguage.googleapis.com/v1beta"
-    MODEL_SEARCH: List[str] = ["gemini-2.0-flash-exp"]
-    MODEL_IMAGE: List[str] = ["gemini-2.0-flash-exp"]
+    SEARCH_MODELS: List[str] = ["gemini-2.0-flash-exp"]
+    IMAGE_MODELS: List[str] = ["gemini-2.0-flash-exp"]
     FILTERED_MODELS: List[str] = ["gemini-1.0-pro-vision-latest", "gemini-pro-vision", "chat-bison-001", "text-bison-001", "embedding-gecko-001"]
     TOOLS_CODE_EXECUTION_ENABLED: bool = False
     SHOW_SEARCH_LINK: bool = True

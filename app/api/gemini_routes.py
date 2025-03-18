@@ -23,7 +23,7 @@ async def get_key_manager():
 async def get_next_working_key_wrapper(key_manager: KeyManager = Depends(get_key_manager)):
     return await key_manager.get_next_working_key()
 
-model_service = ModelService(settings.MODEL_SEARCH,settings.MODEL_IMAGE)
+model_service = ModelService(settings.SEARCH_MODELS,settings.IMAGE_MODELS)
 
 
 @router.get("/models")
@@ -41,8 +41,8 @@ async def list_models(_=Depends(security_service.verify_key),
     model_mapping = {x.get("name", "").split("/", maxsplit=1)[1]: x for x in models_json["models"]}
 
     # 添加搜索模型
-    if settings.MODEL_SEARCH:
-        for name in settings.MODEL_SEARCH:
+    if settings.SEARCH_MODELS:
+        for name in settings.SEARCH_MODELS:
             model = model_mapping.get(name, None)
             if not model:
                 continue
@@ -56,8 +56,8 @@ async def list_models(_=Depends(security_service.verify_key),
             models_json["models"].append(item)
 
     # 添加图像生成模型
-    if settings.MODEL_IMAGE:
-        for name in settings.MODEL_IMAGE:
+    if settings.IMAGE_MODELS:
+        for name in settings.IMAGE_MODELS:
             model = model_mapping.get(name, None)
             if not model:
                 continue

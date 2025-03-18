@@ -64,10 +64,13 @@
     AUTH_TOKEN=""  # 超级管理员token，具有所有权限，默认使用 ALLOWED_TOKENS 的第一个
 
     # 模型功能配置
-    MODEL_SEARCH=["gemini-2.0-flash-exp"]  # 支持搜索功能的模型列表
+    TEST_MODEL="gemini-1.5-flash" # 用于测试密钥是否可用的模型名
+    SEARCH_MODELS=["gemini-2.0-flash-exp"]  # 支持搜索功能的模型列表
+    IMAGE_MODELS=["gemini-2.0-flash-exp"] # 支持绘图功能的模型列表
     TOOLS_CODE_EXECUTION_ENABLED=false  # 是否启用代码执行工具，默认false
     SHOW_SEARCH_LINK=true  # 是否在响应中显示搜索结果链接，默认true
     SHOW_THINKING_PROCESS=true  # 是否显示模型思考过程，默认true
+    FILTERED_MODELS=["gemini-1.0-pro-vision-latest", "gemini-pro-vision", "chat-bison-001", "text-bison-001", "embedding-gecko-001"] # 被禁用的模型列表
 
     # 图片生成配置
     PAID_KEY="your-paid-api-key"  # 付费版API Key，用于图片生成等高级功能
@@ -115,9 +118,17 @@
 
    #### 模型功能配置
 
-    - `MODEL_SEARCH`: 搜索功能支持的模型
+    - `TEST_MODEL`: 用于测试密钥可用性的模型
+      - 默认值: `"gemini-1.5-flash"`
+    - `SEARCH_MODELS`: 搜索功能支持的模型
       - 默认值: `["gemini-2.0-flash-exp"]`
       - 说明: 仅列表中的模型可使用搜索功能
+    - `IMAGE_MODELS`: 绘图功能支持的模型
+      - 默认值: `["gemini-2.0-flash-exp"]`
+      - 说明: 仅列表中的模型可使用绘图功能
+    - `FILTERED_MODELS`: 被禁用的模型列表
+      - 默认值: `["gemini-1.0-pro-vision-latest", "gemini-pro-vision", "chat-bison-001", "text-bison-001", "embedding-gecko-001"]`
+      - 说明: 列表中的模型将被禁用
     - `TOOLS_CODE_EXECUTION_ENABLED`: 代码执行功能
       - 默认值: `false`
       - 安全提示: 生产环境建议禁用
