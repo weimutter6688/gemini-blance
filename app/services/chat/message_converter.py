@@ -33,7 +33,7 @@ def _get_mime_type_and_data(base64_string):
         pattern = r'data:([^;]+);base64,(.+)'
         match = re.match(pattern, base64_string)
         if match:
-            mime_type = match.group(1)
+            mime_type = "image/jpeg" if match.group(1) == "image/jpg" else match.group(1)
             encoded_data = match.group(2)
             return mime_type, encoded_data
     
@@ -45,7 +45,7 @@ def _convert_image(image_url: str) -> Dict[str, Any]:
         mime_type, encoded_data = _get_mime_type_and_data(image_url)
         return {
             "inline_data": {
-                "mime_type": "image/jpeg" if mime_type == "image/jpg" else mime_type,
+                "mime_type": mime_type,
                 "data": encoded_data
             }
         }
