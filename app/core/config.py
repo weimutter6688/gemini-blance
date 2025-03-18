@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     BASE_URL: str = "https://generativelanguage.googleapis.com/v1beta"
     MODEL_SEARCH: List[str] = ["gemini-2.0-flash-exp"]
     MODEL_IMAGE: List[str] = ["gemini-2.0-flash-exp"]
+    FILTERED_MODELS: List[str] = ["gemini-1.0-pro-vision-latest", "gemini-pro-vision"]
     TOOLS_CODE_EXECUTION_ENABLED: bool = False
     SHOW_SEARCH_LINK: bool = True
     SHOW_THINKING_PROCESS: bool = True
