@@ -45,7 +45,7 @@ def _convert_image(image_url: str) -> Dict[str, Any]:
         mime_type, encoded_data = _get_mime_type_and_data(image_url)
         return {
             "inline_data": {
-                "mime_type": mime_type,
+                "mime_type": "image/jpeg" if mime_type == "image/jpg" else mime_type,
                 "data": encoded_data
             }
         }
