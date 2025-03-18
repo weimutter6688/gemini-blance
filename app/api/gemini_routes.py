@@ -41,8 +41,8 @@ async def list_models(_=Depends(security_service.verify_key),
     model_mapping = {x.get("name", "").split("/", maxsplit=1)[1]: x for x in models_json["models"]}
 
     # 添加搜索模型
-    if settings.SEARCH_MODELS:
-        for name in settings.SEARCH_MODELS:
+    if model_service.search_models:
+        for name in model_service.search_models:
             model = model_mapping.get(name, None)
             if not model:
                 continue
@@ -56,8 +56,8 @@ async def list_models(_=Depends(security_service.verify_key),
             models_json["models"].append(item)
 
     # 添加图像生成模型
-    if settings.IMAGE_MODELS:
-        for name in settings.IMAGE_MODELS:
+    if model_service.image_models:
+        for name in model_service.image_models:
             model = model_mapping.get(name, None)
             if not model:
                 continue
