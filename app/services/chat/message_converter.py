@@ -7,7 +7,7 @@ import requests
 import base64
 
 SUPPORTED_ROLES = ["user", "model", "system"]
-IMAGE_URL_PATTERN = r'\[image\]\((.*?)\)'
+IMAGE_URL_PATTERN = r'\[(.*?)\]\((.*?)\)'
 
 
 class MessageConverter(ABC):
@@ -87,7 +87,7 @@ def _process_text_with_image(text: str) -> List[Dict[str, Any]]:
     img_url_match = re.search(IMAGE_URL_PATTERN, text)
     if img_url_match:
         # 提取URL
-        img_url = img_url_match.group(1)
+        img_url = img_url_match.group(2)
         # 将URL对应的图片转换为base64
         try:
             base64_data = _convert_image_to_base64(img_url)

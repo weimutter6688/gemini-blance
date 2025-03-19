@@ -12,6 +12,7 @@ ENV ALLOWED_TOKENS='["your_token_1"]'
 ENV BASE_URL=https://generativelanguage.googleapis.com/v1beta
 ENV TOOLS_CODE_EXECUTION_ENABLED=false
 ENV IMAGE_MODELS='["gemini-2.0-flash-exp"]'
+ENV SEARCH_MODELS='["gemini-2.0-flash-exp","gemini-2.0-pro-exp"]'
 
 # Expose port
 EXPOSE 8000

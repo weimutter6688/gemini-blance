@@ -205,7 +205,7 @@ def _extract_image_data(part: dict) -> str:
     current_date = time.strftime("%Y/%m/%d")
     filename = f"{current_date}/{uuid.uuid4().hex[:8]}.png"
     base64_data = part["inlineData"]["data"]
-                #将base64_data转成bytes数组
+    #将base64_data转成bytes数组
     bytes_data = base64.b64decode(base64_data)
     upload_response = image_uploader.upload(bytes_data,filename)
     if upload_response.success:
