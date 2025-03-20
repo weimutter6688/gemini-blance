@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse, JSONResponse
 from copy import deepcopy
 from app.config.config import settings
-from app.logger.logger import get_gemini_logger
+from app.log.logger import get_gemini_logger
 from app.core.security import SecurityService
 from app.domain.gemini_models import GeminiContent, GeminiRequest
 from app.service.chat.gemini_chat_service import GeminiChatService

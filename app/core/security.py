@@ -1,12 +1,16 @@
-from fastapi import HTTPException, Header
 from typing import Optional
-from app.logger.logger import get_security_logger
+
+from fastapi import Header, HTTPException
+
 from app.config.config import settings
+from app.log.logger import get_security_logger
 
 logger = get_security_logger()
 
+
 def verify_auth_token(token: str) -> bool:
     return token == settings.AUTH_TOKEN
+
 
 class SecurityService:
     def __init__(self, allowed_tokens: list, auth_token: str):
@@ -20,7 +24,7 @@ class SecurityService:
         return key
 
     async def verify_authorization(
-            self, authorization: Optional[str] = Header(None)
+        self, authorization: Optional[str] = Header(None)
     ) -> str:
         if not authorization:
             logger.error("Missing Authorization header")
@@ -39,19 +43,26 @@ class SecurityService:
 
         return token
 
-    async def verify_goog_api_key(self, x_goog_api_key: Optional[str] = Header(None)) -> str:
+    async def verify_goog_api_key(
+        self, x_goog_api_key: Optional[str] = Header(None)
+    ) -> str:
         """验证Google API Key"""
         if not x_goog_api_key:
             logger.error("Missing x-goog-api-key header")
             raise HTTPException(status_code=401, detail="Missing x-goog-api-key header")
 
-        if x_goog_api_key not in self.allowed_tokens and x_goog_api_key != self.auth_token:
+        if (
+            x_goog_api_key not in self.allowed_tokens
+            and x_goog_api_key != self.auth_token
+        ):
             logger.error("Invalid x-goog-api-key")
             raise HTTPException(status_code=401, detail="Invalid x-goog-api-key")
 
         return x_goog_api_key
 
-    async def verify_auth_token(self, authorization: Optional[str] = Header(None)) -> str:
+    async def verify_auth_token(
+        self, authorization: Optional[str] = Header(None)
+    ) -> str:
         if not authorization:
             logger.error("Missing auth_token header")
             raise HTTPException(status_code=401, detail="Missing auth_token header")

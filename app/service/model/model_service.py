@@ -1,10 +1,13 @@
-import requests
 from datetime import datetime, timezone
-from typing import Optional, Dict, Any
-from app.logger.logger import get_model_logger
+from typing import Any, Dict, Optional
+
+import requests
+
 from app.config.config import settings
+from app.log.logger import get_model_logger
 
 logger = get_model_logger()
+
 
 class ModelService:
     def __init__(self, search_models: list, image_models: list):
@@ -20,7 +23,7 @@ class ModelService:
             response = requests.get(url)
             if response.status_code == 200:
                 gemini_models = response.json()
-                
+
                 filtered_models_list = []
                 for model in gemini_models.get("models", []):
                     model_id = model["name"].split("/")[-1]
@@ -28,7 +31,7 @@ class ModelService:
                         filtered_models_list.append(model)
                     else:
                         logger.info(f"Filtered out model: {model_id}")
-                
+
                 gemini_models["models"] = filtered_models_list
                 return gemini_models
             else:
@@ -48,7 +51,7 @@ class ModelService:
             return None
 
     def convert_to_openai_models_format(
-            self, gemini_models: Dict[str, Any]
+        self, gemini_models: Dict[str, Any]
     ) -> Dict[str, Any]:
         openai_format = {"object": "list", "data": [], "success": True}
 

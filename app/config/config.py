@@ -4,7 +4,7 @@
 from typing import List
 from pydantic_settings import BaseSettings
 
-from app.core.constants import API_VERSION, DEFAULT_MODEL
+from app.core.constants import API_VERSION, DEFAULT_CREATE_IMAGE_MODEL, DEFAULT_FILTER_MODELS, DEFAULT_MODEL, DEFAULT_STREAM_CHUNK_SIZE, DEFAULT_STREAM_LONG_TEXT_THRESHOLD, DEFAULT_STREAM_MAX_DELAY, DEFAULT_STREAM_MIN_DELAY, DEFAULT_STREAM_SHORT_TEXT_THRESHOLD
 
 
 class Settings(BaseSettings):
@@ -20,20 +20,14 @@ class Settings(BaseSettings):
     # 模型相关配置
     SEARCH_MODELS: List[str] = ["gemini-2.0-flash-exp"]
     IMAGE_MODELS: List[str] = ["gemini-2.0-flash-exp"]
-    FILTERED_MODELS: List[str] = [
-        "gemini-1.0-pro-vision-latest", 
-        "gemini-pro-vision", 
-        "chat-bison-001", 
-        "text-bison-001", 
-        "embedding-gecko-001"
-    ]
+    FILTERED_MODELS: List[str] = DEFAULT_FILTER_MODELS
     TOOLS_CODE_EXECUTION_ENABLED: bool = False
     SHOW_SEARCH_LINK: bool = True
     SHOW_THINKING_PROCESS: bool = True
     
     # 图像生成相关配置
     PAID_KEY: str = ""
-    CREATE_IMAGE_MODEL: str = "imagen-3.0-generate-002"
+    CREATE_IMAGE_MODEL: str = DEFAULT_CREATE_IMAGE_MODEL
     UPLOAD_PROVIDER: str = "smms"
     SMMS_SECRET_TOKEN: str = ""
     PICGO_API_KEY: str = ""
@@ -41,11 +35,11 @@ class Settings(BaseSettings):
     CLOUDFLARE_IMGBED_AUTH_CODE: str = ""
     
     # 流式输出优化器配置
-    STREAM_MIN_DELAY: float = 0.016
-    STREAM_MAX_DELAY: float = 0.024
-    STREAM_SHORT_TEXT_THRESHOLD: int = 10
-    STREAM_LONG_TEXT_THRESHOLD: int = 50
-    STREAM_CHUNK_SIZE: int = 5
+    STREAM_MIN_DELAY: float = DEFAULT_STREAM_MIN_DELAY
+    STREAM_MAX_DELAY: float = DEFAULT_STREAM_MAX_DELAY
+    STREAM_SHORT_TEXT_THRESHOLD: int = DEFAULT_STREAM_SHORT_TEXT_THRESHOLD
+    STREAM_LONG_TEXT_THRESHOLD: int = DEFAULT_STREAM_LONG_TEXT_THRESHOLD
+    STREAM_CHUNK_SIZE: int = DEFAULT_STREAM_CHUNK_SIZE
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

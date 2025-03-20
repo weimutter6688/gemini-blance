@@ -1,7 +1,9 @@
+import json
+
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
-import json
-from app.logger.logger import get_request_logger
+
+from app.log.logger import get_request_logger
 
 logger = get_request_logger()
 
@@ -20,7 +22,9 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
                 # 尝试格式化JSON
                 try:
                     formatted_body = json.loads(body_str)
-                    logger.info(f"Formatted request body:\n{json.dumps(formatted_body, indent=2, ensure_ascii=False)}")
+                    logger.info(
+                        f"Formatted request body:\n{json.dumps(formatted_body, indent=2, ensure_ascii=False)}"
+                    )
                 except json.JSONDecodeError:
                     logger.info("Request body is not valid JSON.")
         except Exception as e:

@@ -1,9 +1,11 @@
 """
 应用程序入口模块
 """
+
 import uvicorn
+
 from app.core.application import create_app
-from app.logger.logger import get_main_logger
+from app.log.logger import get_main_logger
 
 # 创建应用程序实例
 app = create_app()

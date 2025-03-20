@@ -6,14 +6,14 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
 from app.config.config import settings
-from app.logger.logger import get_main_logger
+from app.log.logger import get_application_logger
 from app.middleware.middleware import setup_middlewares
 from app.exception.exceptions import setup_exception_handlers
-from app.router.routers import setup_routers
+from app.router.routes import setup_routers
 from app.service.key.key_manager import get_key_manager_instance
 from app.core.initialization import initialize_app
 
-logger = get_main_logger()
+logger = get_application_logger()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

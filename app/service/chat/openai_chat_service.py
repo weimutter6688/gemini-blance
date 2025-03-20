@@ -1,15 +1,16 @@
 # app/services/chat_service.py
 
-from copy import deepcopy
 import json
-from typing import Dict, Any, AsyncGenerator, List, Optional, Union
-from app.logger.logger import get_openai_logger
+from copy import deepcopy
+from typing import Any, AsyncGenerator, Dict, List, Optional, Union
+
+from app.config.config import settings
+from app.domain.openai_models import ChatRequest, ImageGenerationRequest
 from app.handler.message_converter import OpenAIMessageConverter
 from app.handler.response_handler import OpenAIResponseHandler
-from app.service.client.api_client import GeminiApiClient
 from app.handler.stream_optimizer import openai_optimizer
-from app.domain.openai_models import ChatRequest, ImageGenerationRequest
-from app.config.config import settings
+from app.log.logger import get_openai_logger
+from app.service.client.api_client import GeminiApiClient
 from app.service.image.image_create_service import ImageCreateService
 from app.service.key.key_manager import KeyManager
 
@@ -27,16 +28,21 @@ def _has_image_parts(contents: List[Dict[str, Any]]) -> bool:
 
 
 def _build_tools(
-        request: ChatRequest, messages: List[Dict[str, Any]]
+    request: ChatRequest, messages: List[Dict[str, Any]]
 ) -> List[Dict[str, Any]]:
     """构建工具"""
     tools = []
     model = request.model
 
     if (
-            settings.TOOLS_CODE_EXECUTION_ENABLED
-            and not (model.endswith("-search") or "-thinking" in model or model.endswith("-image") or model.endswith("-image-generation"))
-            and not _has_image_parts(messages)
+        settings.TOOLS_CODE_EXECUTION_ENABLED
+        and not (
+            model.endswith("-search")
+            or "-thinking" in model
+            or model.endswith("-image")
+            or model.endswith("-image-generation")
+        )
+        and not _has_image_parts(messages)
     ):
         tools.append({"code_execution": {}})
     if model.endswith("-search"):
@@ -52,7 +58,9 @@ def _build_tools(
             if tool.get("type", "") == "function" and tool.get("function"):
                 function = deepcopy(tool.get("function"))
                 parameters = function.get("parameters", {})
-                if parameters.get("type") == "object" and not parameters.get("properties", {}):
+                if parameters.get("type") == "object" and not parameters.get(
+                    "properties", {}
+                ):
                     function.pop("parameters", None)
 
                 function_declarations.append(function)
@@ -66,7 +74,7 @@ def _build_tools(
                     functions.append(item)
 
             tools.append({"functionDeclarations": functions})
-            
+
     return tools
 
 
@@ -95,7 +103,9 @@ def _get_safety_settings(model: str) -> List[Dict[str, str]]:
 
 
 def _build_payload(
-    request: ChatRequest, messages: List[Dict[str, Any]], instruction: Optional[Dict[str, Any]] = None
+    request: ChatRequest,
+    messages: List[Dict[str, Any]],
+    instruction: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """构建请求payload"""
     payload = {
@@ -111,8 +121,8 @@ def _build_payload(
         "safetySettings": _get_safety_settings(request.model),
     }
     if request.model.endswith("-image") or request.model.endswith("-image-generation"):
-        payload["generationConfig"]["responseModalities"] = ["Text","Image"]
-        
+        payload["generationConfig"]["responseModalities"] = ["Text", "Image"]
+
     if (
         instruction
         and isinstance(instruction, dict)
@@ -128,24 +138,27 @@ def _build_payload(
 
 class OpenAIChatService:
     """聊天服务"""
+
     def __init__(self, base_url: str, key_manager: KeyManager = None):
         self.message_converter = OpenAIMessageConverter()
         self.response_handler = OpenAIResponseHandler(config=None)
         self.api_client = GeminiApiClient(base_url)
         self.key_manager = key_manager
         self.image_create_service = ImageCreateService()
-        
+
     def _extract_text_from_openai_chunk(self, chunk: Dict[str, Any]) -> str:
         """从OpenAI响应块中提取文本内容"""
         if not chunk.get("choices"):
             return ""
-            
+
         choice = chunk["choices"][0]
         if "delta" in choice and "content" in choice["delta"]:
             return choice["delta"]["content"]
         return ""
-        
-    def _create_char_openai_chunk(self, original_chunk: Dict[str, Any], text: str) -> Dict[str, Any]:
+
+    def _create_char_openai_chunk(
+        self, original_chunk: Dict[str, Any], text: str
+    ) -> Dict[str, Any]:
         """创建包含指定文本的OpenAI响应块"""
         chunk_copy = json.loads(json.dumps(original_chunk))  # 深拷贝
         if chunk_copy.get("choices") and "delta" in chunk_copy["choices"][0]:
@@ -153,9 +166,9 @@ class OpenAIChatService:
         return chunk_copy
 
     async def create_chat_completion(
-            self,
-            request: ChatRequest,
-            api_key: str,
+        self,
+        request: ChatRequest,
+        api_key: str,
     ) -> Union[Dict[str, Any], AsyncGenerator[str, None]]:
         """创建聊天完成"""
         # 转换消息格式
@@ -169,7 +182,7 @@ class OpenAIChatService:
         return await self._handle_normal_completion(request.model, payload, api_key)
 
     async def _handle_normal_completion(
-            self, model: str, payload: Dict[str, Any], api_key: str
+        self, model: str, payload: Dict[str, Any], api_key: str
     ) -> Dict[str, Any]:
         """处理普通聊天完成"""
         response = await self.api_client.generate_content(payload, model, api_key)
@@ -178,7 +191,7 @@ class OpenAIChatService:
         )
 
     async def _handle_stream_completion(
-            self, model: str, payload: Dict[str, Any], api_key: str
+        self, model: str, payload: Dict[str, Any], api_key: str
     ) -> AsyncGenerator[str, None]:
         """处理流式聊天完成，添加重试逻辑"""
         retries = 0
@@ -186,7 +199,7 @@ class OpenAIChatService:
         while retries < max_retries:
             try:
                 async for line in self.api_client.stream_generate_content(
-                        payload, model, api_key
+                    payload, model, api_key
                 ):
                     # print(line)
                     if line.startswith("data:"):
@@ -199,10 +212,14 @@ class OpenAIChatService:
                             text = self._extract_text_from_openai_chunk(openai_chunk)
                             if text:
                                 # 使用流式输出优化器处理文本输出
-                                async for optimized_chunk in openai_optimizer.optimize_stream_output(
+                                async for (
+                                    optimized_chunk
+                                ) in openai_optimizer.optimize_stream_output(
                                     text,
-                                    lambda t: self._create_char_openai_chunk(openai_chunk, t),
-                                    lambda c: f"data: {json.dumps(c)}\n\n"
+                                    lambda t: self._create_char_openai_chunk(
+                                        openai_chunk, t
+                                    ),
+                                    lambda c: f"data: {json.dumps(c)}\n\n",
                                 ):
                                     yield optimized_chunk
                             else:
@@ -228,21 +245,23 @@ class OpenAIChatService:
                     break
 
     async def create_image_chat_completion(
-            self,
-            request: ChatRequest,
+        self,
+        request: ChatRequest,
     ) -> Union[Dict[str, Any], AsyncGenerator[str, None]]:
-        
+
         image_generate_request = ImageGenerationRequest()
         image_generate_request.prompt = request.messages[-1]["content"]
-        image_res = self.image_create_service.generate_images_chat(image_generate_request)
-        
+        image_res = self.image_create_service.generate_images_chat(
+            image_generate_request
+        )
+
         if request.stream:
-            return self._handle_stream_image_completion(request.model,image_res)
+            return self._handle_stream_image_completion(request.model, image_res)
         else:
-            return self._handle_normal_image_completion(request.model,image_res)
-        
+            return self._handle_normal_image_completion(request.model, image_res)
+
     async def _handle_stream_image_completion(
-            self, model: str, image_data: str
+        self, model: str, image_data: str
     ) -> AsyncGenerator[str, None]:
         if image_data:
             openai_chunk = self.response_handler.handle_image_chat_response(
@@ -253,10 +272,12 @@ class OpenAIChatService:
                 text = self._extract_text_from_openai_chunk(openai_chunk)
                 if text:
                     # 使用流式输出优化器处理文本输出
-                    async for optimized_chunk in openai_optimizer.optimize_stream_output(
+                    async for (
+                        optimized_chunk
+                    ) in openai_optimizer.optimize_stream_output(
                         text,
                         lambda t: self._create_char_openai_chunk(openai_chunk, t),
-                        lambda c: f"data: {json.dumps(c)}\n\n"
+                        lambda c: f"data: {json.dumps(c)}\n\n",
                     ):
                         yield optimized_chunk
                 else:
@@ -265,11 +286,11 @@ class OpenAIChatService:
         yield f"data: {json.dumps(self.response_handler.handle_response({}, model, stream=True, finish_reason='stop'))}\n\n"
         yield "data: [DONE]\n\n"
         logger.info("Image chat streaming completed successfully")
-    
+
     def _handle_normal_image_completion(
-            self, model: str, image_data: str
+        self, model: str, image_data: str
     ) -> Dict[str, Any]:
-        
+
         return self.response_handler.handle_image_chat_response(
             image_data, model, stream=False, finish_reason="stop"
         )

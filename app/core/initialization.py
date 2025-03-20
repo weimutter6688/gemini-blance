@@ -1,11 +1,12 @@
 """
 应用程序初始化模块
 """
-import logging
 from pathlib import Path
 from typing import List
 
-logger = logging.getLogger("initialization")
+from app.log.logger import get_initialization_logger
+
+logger = get_initialization_logger()
 
 
 def ensure_directories_exist(directories: List[str]) -> None:

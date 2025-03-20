@@ -133,3 +133,23 @@ def get_retry_logger():
 
 def get_image_create_logger():
     return Logger.setup_logger("image_create")
+
+
+def get_exceptions_logger():
+    return Logger.setup_logger("exceptions")
+
+
+def get_application_logger():
+    return Logger.setup_logger("application")
+
+
+def get_initialization_logger():
+    return Logger.setup_logger("initialization")
+
+
+def get_middleware_logger():
+    return Logger.setup_logger("middleware")
+
+
+def get_routes_logger():
+    return Logger.setup_logger("routes")

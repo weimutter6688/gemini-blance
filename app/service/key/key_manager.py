@@ -1,9 +1,9 @@
 import asyncio
 from itertools import cycle
 from typing import Dict
-from app.logger.logger import get_key_manager_logger
-from app.config.config import settings
 
+from app.config.config import settings
+from app.log.logger import get_key_manager_logger
 
 logger = get_key_manager_logger()
 
@@ -20,7 +20,7 @@ class KeyManager:
 
     async def get_paid_key(self) -> str:
         return self.paid_key
-        
+
     async def get_next_key(self) -> str:
         """获取下一个API key"""
         async with self.key_cycle_lock:
@@ -70,7 +70,7 @@ class KeyManager:
         """获取分类后的API key列表，包括失败次数"""
         valid_keys = {}
         invalid_keys = {}
-        
+
         async with self.failure_count_lock:
             for key in self.api_keys:
                 fail_count = self.key_failure_counts[key]
@@ -78,15 +78,13 @@ class KeyManager:
                     valid_keys[key] = fail_count
                 else:
                     invalid_keys[key] = fail_count
-        
-        return {
-            "valid_keys": valid_keys,
-            "invalid_keys": invalid_keys
-        }
-        
-        
+
+        return {"valid_keys": valid_keys, "invalid_keys": invalid_keys}
+
+
 _singleton_instance = None
 _singleton_lock = asyncio.Lock()
+
 
 async def get_key_manager_instance(api_keys: list = None) -> KeyManager:
     """
