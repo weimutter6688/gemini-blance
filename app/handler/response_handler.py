@@ -8,8 +8,8 @@ from abc import ABC, abstractmethod
 from typing import Dict, Any, List, Optional
 import time
 import uuid
-from app.core.config import settings
-from app.core.uploader import ImageUploaderFactory
+from app.config.config import settings
+from app.utils.uploader import ImageUploaderFactory
 
 
 class ResponseHandler(ABC):

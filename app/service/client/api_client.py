@@ -4,6 +4,8 @@ from typing import Dict, Any, AsyncGenerator
 import httpx
 from abc import ABC, abstractmethod
 
+from app.core.constants import DEFAULT_TIMEOUT
+
 
 class ApiClient(ABC):
     """API客户端基类"""
@@ -20,7 +22,7 @@ class ApiClient(ABC):
 class GeminiApiClient(ApiClient):
     """Gemini API客户端"""
 
-    def __init__(self, base_url: str, timeout: int = 300):
+    def __init__(self, base_url: str, timeout: int = DEFAULT_TIMEOUT):
         self.base_url = base_url
         self.timeout = timeout
 

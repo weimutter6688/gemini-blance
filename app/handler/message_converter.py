@@ -6,8 +6,7 @@ from typing import Any, Dict, List, Optional
 import requests
 import base64
 
-SUPPORTED_ROLES = ["user", "model", "system"]
-IMAGE_URL_PATTERN = r'\[(.*?)\]\((.*?)\)'
+from app.core.constants import DATA_URL_PATTERN, IMAGE_URL_PATTERN, SUPPORTED_ROLES
 
 
 class MessageConverter(ABC):
@@ -30,7 +29,7 @@ def _get_mime_type_and_data(base64_string):
     # 检查字符串是否以 "data:" 格式开始
     if base64_string.startswith('data:'):
         # 提取 MIME 类型和数据
-        pattern = r'data:([^;]+);base64,(.+)'
+        pattern = DATA_URL_PATTERN
         match = re.match(pattern, base64_string)
         if match:
             mime_type = "image/jpeg" if match.group(1) == "image/jpg" else match.group(1)

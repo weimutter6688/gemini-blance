@@ -2,7 +2,7 @@
 
 from typing import TypeVar, Callable
 from functools import wraps
-from app.core.logger import get_retry_logger
+from app.logger.logger import get_retry_logger
 
 T = TypeVar('T')
 logger = get_retry_logger()

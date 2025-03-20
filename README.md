@@ -263,7 +263,7 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
                 "content": "你好"
             }
         ],
-        "model": "gemini-1.5-flash-002",
+        "model": "gemini-1.5-flash",
         "temperature": 0.7,
         "stream": false,
         "tools": [],
@@ -276,7 +276,7 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
   - `messages`: 消息列表，格式与 OpenAI API 相同
   - `model`: 模型名称，支持所有Gemini模型，包括:
-    - `gemini-1.5-flash-002`: 快速响应模型
+    - `gemini-1.5-flash`: 快速响应模型
     - `gemini-2.0-flash-exp`: 实验性快速响应模型
     - `gemini-2.0-flash-exp-search`: 支持搜索功能的实验性模型
   - `stream`: 是否开启流式响应，`true` 或 `false`

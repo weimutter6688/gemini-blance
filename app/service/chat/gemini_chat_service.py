@@ -2,13 +2,13 @@
 
 import json
 from typing import Dict, Any, AsyncGenerator, List
-from app.core.logger import get_gemini_logger
-from app.services.chat.api_client import GeminiApiClient
-from app.services.chat.stream_optimizer import gemini_optimizer
-from app.schemas.gemini_models import GeminiRequest
-from app.core.config import settings
-from app.services.chat.response_handler import GeminiResponseHandler
-from app.services.key_manager import KeyManager
+from app.logger.logger import get_gemini_logger
+from app.service.client.api_client import GeminiApiClient
+from app.handler.stream_optimizer import gemini_optimizer
+from app.domain.gemini_models import GeminiRequest
+from app.config.config import settings
+from app.handler.response_handler import GeminiResponseHandler
+from app.service.key.key_manager import KeyManager
 
 logger = get_gemini_logger()
 

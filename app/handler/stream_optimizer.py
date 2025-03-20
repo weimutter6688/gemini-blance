@@ -3,8 +3,9 @@
 import asyncio
 import math
 from typing import Any, List, AsyncGenerator, Callable
-from app.core.logger import get_openai_logger, get_gemini_logger
-from app.core.config import settings
+from app.logger.logger import get_openai_logger, get_gemini_logger
+from app.config.config import settings
+from app.core.constants import DEFAULT_STREAM_CHUNK_SIZE, DEFAULT_STREAM_LONG_TEXT_THRESHOLD, DEFAULT_STREAM_MAX_DELAY, DEFAULT_STREAM_MIN_DELAY, DEFAULT_STREAM_SHORT_TEXT_THRESHOLD
 
 logger_openai = get_openai_logger()
 logger_gemini = get_gemini_logger()
@@ -18,11 +19,11 @@ class StreamOptimizer:
     
     def __init__(self, 
                  logger=None, 
-                 min_delay: float = 0.016, 
-                 max_delay: float = 0.024,
-                 short_text_threshold: int = 10,
-                 long_text_threshold: int = 50,
-                 chunk_size: int = 5):
+                 min_delay: float = DEFAULT_STREAM_MIN_DELAY, 
+                 max_delay: float = DEFAULT_STREAM_MAX_DELAY,
+                 short_text_threshold: int = DEFAULT_STREAM_SHORT_TEXT_THRESHOLD,
+                 long_text_threshold: int = DEFAULT_STREAM_LONG_TEXT_THRESHOLD,
+                 chunk_size: int = DEFAULT_STREAM_CHUNK_SIZE):
         """初始化流式输出优化器
         
         参数:

@@ -1,5 +1,5 @@
 import requests
-from app.schemas.image_models import ImageMetadata, ImageUploader, UploadResponse
+from app.domain.image_models import ImageMetadata, ImageUploader, UploadResponse
 from enum import Enum
 from typing import Optional, Any
 

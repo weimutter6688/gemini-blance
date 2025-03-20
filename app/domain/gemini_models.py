@@ -36,5 +36,5 @@ class GeminiRequest(BaseModel):
     contents: List[GeminiContent] = []
     tools: Optional[List[Dict[str, Any]]] = []
     safetySettings: Optional[List[SafetySetting]] = None
-    generationConfig: Optional[GenerationConfig] = {}
+    generationConfig: Optional[GenerationConfig] = None
     systemInstruction: Optional[SystemInstruction] = None

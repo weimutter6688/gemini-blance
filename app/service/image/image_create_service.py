@@ -5,10 +5,11 @@ from google import genai
 from google.genai import types
 import base64
 
-from app.core.config import settings
-from app.core.logger import get_image_create_logger
-from app.core.uploader import ImageUploaderFactory
-from app.schemas.openai_models import ImageGenerationRequest
+from app.config.config import settings
+from app.logger.logger import get_image_create_logger
+from app.utils.uploader import ImageUploaderFactory
+from app.domain.openai_models import ImageGenerationRequest
+from app.core.constants import VALID_IMAGE_RATIOS
 
 logger = get_image_create_logger()
 
@@ -43,10 +44,9 @@ class ImageCreateService:
         ratio_match = re.search(r'{ratio:(\d+:\d+)}', prompt)
         if ratio_match:
             aspect_ratio = ratio_match.group(1)
-            valid_ratios = ["1:1", "3:4", "4:3", "9:16", "16:9"]
-            if aspect_ratio not in valid_ratios:
+            if aspect_ratio not in VALID_IMAGE_RATIOS:
                 raise ValueError(
-                    f"Invalid ratio: {aspect_ratio}. Must be one of: {', '.join(valid_ratios)}"
+                    f"Invalid ratio: {aspect_ratio}. Must be one of: {', '.join(VALID_IMAGE_RATIOS)}"
                 )
             prompt = prompt.replace(ratio_match.group(0), '').strip()
             

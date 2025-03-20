@@ -1,7 +1,7 @@
 from fastapi import HTTPException, Header
 from typing import Optional
-from app.core.logger import get_security_logger
-from app.core.config import settings
+from app.logger.logger import get_security_logger
+from app.config.config import settings
 
 logger = get_security_logger()
 

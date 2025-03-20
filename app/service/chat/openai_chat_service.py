@@ -3,15 +3,15 @@
 from copy import deepcopy
 import json
 from typing import Dict, Any, AsyncGenerator, List, Optional, Union
-from app.core.logger import get_openai_logger
-from app.services.chat.message_converter import OpenAIMessageConverter
-from app.services.chat.response_handler import OpenAIResponseHandler
-from app.services.chat.api_client import GeminiApiClient
-from app.services.chat.stream_optimizer import openai_optimizer
-from app.schemas.openai_models import ChatRequest, ImageGenerationRequest
-from app.core.config import settings
-from app.services.image_create_service import ImageCreateService
-from app.services.key_manager import KeyManager
+from app.logger.logger import get_openai_logger
+from app.handler.message_converter import OpenAIMessageConverter
+from app.handler.response_handler import OpenAIResponseHandler
+from app.service.client.api_client import GeminiApiClient
+from app.handler.stream_optimizer import openai_optimizer
+from app.domain.openai_models import ChatRequest, ImageGenerationRequest
+from app.config.config import settings
+from app.service.image.image_create_service import ImageCreateService
+from app.service.key.key_manager import KeyManager
 
 logger = get_openai_logger()
 

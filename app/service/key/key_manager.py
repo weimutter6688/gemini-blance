@@ -1,8 +1,8 @@
 import asyncio
 from itertools import cycle
 from typing import Dict
-from app.core.logger import get_key_manager_logger
-from app.core.config import settings
+from app.logger.logger import get_key_manager_logger
+from app.config.config import settings
 
 
 logger = get_key_manager_logger()

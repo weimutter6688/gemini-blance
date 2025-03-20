@@ -1,8 +1,8 @@
 import requests
 from datetime import datetime, timezone
 from typing import Optional, Dict, Any
-from app.core.logger import get_model_logger
-from app.core.config import settings
+from app.logger.logger import get_model_logger
+from app.config.config import settings
 
 logger = get_model_logger()
 
@@ -10,7 +10,7 @@ class ModelService:
     def __init__(self, search_models: list, image_models: list):
         self.search_models = search_models
         self.image_models = image_models
-        self.base_url = "https://generativelanguage.googleapis.com/v1beta"
+        self.base_url = settings.BASE_URL
         self.filtered_models = settings.FILTERED_MODELS
 
     def get_gemini_models(self, api_key: str) -> Optional[Dict[str, Any]]:
