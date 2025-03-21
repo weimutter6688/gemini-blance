@@ -78,7 +78,7 @@ def _build_tools(
         tool.pop("googleSearch", None)
         tool.pop("codeExecution", None)
 
-    return [tool]
+    return [tool] if tool else []
 
 
 def _get_safety_settings(model: str) -> List[Dict[str, str]]:
@@ -201,10 +201,11 @@ class OpenAIChatService:
         max_retries = 3
         while retries < max_retries:
             try:
+                tool_call_flag = False
                 async for line in self.api_client.stream_generate_content(
                     payload, model, api_key
                 ):
-                    # print(line)
+                    print(line)
                     if line.startswith("data:"):
                         chunk = json.loads(line[6:])
                         openai_chunk = self.response_handler.handle_response(
@@ -227,8 +228,13 @@ class OpenAIChatService:
                                     yield optimized_chunk
                             else:
                                 # 如果没有文本内容（如工具调用等），整块输出
+                                if "tool_calls" in json.dumps(openai_chunk):
+                                    tool_call_flag = True
                                 yield f"data: {json.dumps(openai_chunk)}\n\n"
-                yield f"data: {json.dumps(self.response_handler.handle_response({}, model, stream=True, finish_reason='stop'))}\n\n"
+                if tool_call_flag:
+                    yield f"data: {json.dumps(self.response_handler.handle_response({}, model, stream=True, finish_reason='tool_calls'))}\n\n"
+                else:
+                    yield f"data: {json.dumps(self.response_handler.handle_response({}, model, stream=True, finish_reason='stop'))}\n\n"
                 yield "data: [DONE]\n\n"
                 logger.info("Streaming completed successfully")
                 break  # 成功后退出循环
