@@ -26,22 +26,43 @@ def _has_image_parts(contents: List[Dict[str, Any]]) -> bool:
 
 def _build_tools(model: str, payload: Dict[str, Any]) -> List[Dict[str, Any]]:
     """构建工具"""
-    tools = []
+    
+    def _merge_tools(tools: List[Dict[str, Any]]) -> Dict[str, Any]:
+        record = dict()
+        for item in tools:
+            if not item or not isinstance(item, dict):
+                continue
+
+            for k, v in item.items():
+                if k == "functionDeclarations" and v and isinstance(v, list):
+                    functions = record.get("functionDeclarations", [])
+                    functions.extend(v)
+                    record["functionDeclarations"] = functions
+                else:
+                    record[k] = v
+        return record
+
+    tool = dict()
+    if payload and isinstance(payload, dict) and "tools" in payload:
+        items = payload.get("tools", [])
+        if items and isinstance(items, list):
+            tool.update(_merge_tools(items))
+
     if (
         settings.TOOLS_CODE_EXECUTION_ENABLED
         and not (model.endswith("-search") or "-thinking" in model)
         and not _has_image_parts(payload.get("contents", []))
     ):
-        tools.append({"code_execution": {}})
+        tool["codeExecution"] = {}
     if model.endswith("-search"):
-        tools.append({"googleSearch": {}})
+        tool["googleSearch"] = {}
 
-    if payload and isinstance(payload, dict) and "tools" in payload:
-        items = payload.get("tools", [])
-        if items and isinstance(items, list):
-            tools.extend(items)
+    # 解决 "Tool use with function calling is unsupported" 问题
+    if tool.get("functionDeclarations"):
+        tool.pop("googleSearch", None)
+        tool.pop("codeExecution", None)
 
-    return tools
+    return [tool]
 
 
 def _get_safety_settings(model: str) -> List[Dict[str, str]]:

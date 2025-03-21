@@ -31,7 +31,7 @@ def _build_tools(
     request: ChatRequest, messages: List[Dict[str, Any]]
 ) -> List[Dict[str, Any]]:
     """构建工具"""
-    tools = []
+    tool = dict()
     model = request.model
 
     if (
@@ -44,23 +44,21 @@ def _build_tools(
         )
         and not _has_image_parts(messages)
     ):
-        tools.append({"code_execution": {}})
+        tool["codeExecution"] = {}
     if model.endswith("-search"):
-        tools.append({"googleSearch": {}})
+        tool["googleSearch"] = {}
 
     # 将 request 中的 tools 合并到 tools 中
     if request.tools:
         function_declarations = []
-        for tool in request.tools:
-            if not tool or not isinstance(tool, dict):
+        for item in request.tools:
+            if not item or not isinstance(item, dict):
                 continue
 
-            if tool.get("type", "") == "function" and tool.get("function"):
-                function = deepcopy(tool.get("function"))
+            if item.get("type", "") == "function" and item.get("function"):
+                function = deepcopy(item.get("function"))
                 parameters = function.get("parameters", {})
-                if parameters.get("type") == "object" and not parameters.get(
-                    "properties", {}
-                ):
+                if parameters.get("type") == "object" and not parameters.get("properties", {}):
                     function.pop("parameters", None)
 
                 function_declarations.append(function)
@@ -68,14 +66,19 @@ def _build_tools(
         if function_declarations:
             # 按照 function 的 name 去重
             names, functions = set(), []
-            for item in function_declarations:
-                if item.get("name") not in names:
-                    names.add(item.get("name"))
-                    functions.append(item)
+            for fc in function_declarations:
+                if fc.get("name") not in names:
+                    names.add(fc.get("name"))
+                    functions.append(fc)
 
-            tools.append({"functionDeclarations": functions})
+            tool["functionDeclarations"] = functions
 
-    return tools
+    # 解决 "Tool use with function calling is unsupported" 问题
+    if tool.get("functionDeclarations"):
+        tool.pop("googleSearch", None)
+        tool.pop("codeExecution", None)
+
+    return [tool]
 
 
 def _get_safety_settings(model: str) -> List[Dict[str, str]]:
