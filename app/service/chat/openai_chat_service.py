@@ -205,7 +205,7 @@ class OpenAIChatService:
                 async for line in self.api_client.stream_generate_content(
                     payload, model, api_key
                 ):
-                    print(line)
+                    # print(line)
                     if line.startswith("data:"):
                         chunk = json.loads(line[6:])
                         openai_chunk = self.response_handler.handle_response(
