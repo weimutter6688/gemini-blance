@@ -49,11 +49,14 @@ def _convert_image(image_url: str) -> Dict[str, Any]:
                 "data": encoded_data
             }
         }
-    return {
-        "image_url": {
-            "url": image_url
+    else:
+        encoded_data = _convert_image_to_base64(image_url)
+        return {
+            "inline_data": {
+                "mime_type": "image/png",
+                "data": encoded_data
+            }
         }
-    }
 
 
 def _convert_image_to_base64(url: str) -> str:
