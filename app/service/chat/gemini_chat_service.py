@@ -62,7 +62,7 @@ def _build_tools(model: str, payload: Dict[str, Any]) -> List[Dict[str, Any]]:
         tool.pop("googleSearch", None)
         tool.pop("codeExecution", None)
 
-    return [tool]
+    return [tool] if tool else []
 
 
 def _get_safety_settings(model: str) -> List[Dict[str, str]]:
