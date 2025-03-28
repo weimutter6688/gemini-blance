@@ -1,4 +1,4 @@
-# 🚀 FastAPI OpenAI (Gemini) 代理服务
+# 🚀 Gemini 代理服务（支持openai/gemini格式）
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
