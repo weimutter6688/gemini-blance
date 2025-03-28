@@ -34,7 +34,7 @@ async def get_next_working_key(key_manager: KeyManager = Depends(get_key_manager
 @router.get("/models")
 @router_v1beta.get("/models")
 async def list_models(
-    _=Depends(security_service.verify_key),
+    _=Depends(security_service.verify_key_or_goog_api_key),
     key_manager: KeyManager = Depends(get_key_manager)
 ):
     """获取可用的Gemini模型列表"""

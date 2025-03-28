@@ -72,3 +72,22 @@ class SecurityService:
             raise HTTPException(status_code=401, detail="Invalid auth_token")
 
         return token
+
+    async def verify_key_or_goog_api_key(
+        self, key: Optional[str] = None , x_goog_api_key: Optional[str] = Header(None)
+    ) -> str:
+        """验证URL中的key或请求头中的x-goog-api-key"""
+        # 如果URL中的key有效，直接返回
+        if key in self.allowed_tokens or key == self.auth_token:
+            return key
+        
+        # 否则检查请求头中的x-goog-api-key
+        if not x_goog_api_key:
+            logger.error("Invalid key and missing x-goog-api-key header")
+            raise HTTPException(status_code=401, detail="Invalid key and missing x-goog-api-key header")
+        
+        if x_goog_api_key not in self.allowed_tokens and x_goog_api_key != self.auth_token:
+            logger.error("Invalid key and invalid x-goog-api-key")
+            raise HTTPException(status_code=401, detail="Invalid key and invalid x-goog-api-key")
+        
+        return x_goog_api_key
