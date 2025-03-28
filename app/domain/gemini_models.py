@@ -1,4 +1,4 @@
-from typing import List, Optional, Dict, Any, Literal
+from typing import List, Optional, Dict, Any, Literal, Union
 from pydantic import BaseModel
 
 
@@ -34,7 +34,7 @@ class GeminiContent(BaseModel):
 
 class GeminiRequest(BaseModel):
     contents: List[GeminiContent] = []
-    tools: Optional[List[Dict[str, Any]]] = []
+    tools: Optional[Union[List[Dict[str, Any]], Dict[str, Any]]] = []
     safetySettings: Optional[List[SafetySetting]] = None
     generationConfig: Optional[GenerationConfig] = None
     systemInstruction: Optional[SystemInstruction] = None

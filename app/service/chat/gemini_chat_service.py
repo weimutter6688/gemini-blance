@@ -44,6 +44,8 @@ def _build_tools(model: str, payload: Dict[str, Any]) -> List[Dict[str, Any]]:
 
     tool = dict()
     if payload and isinstance(payload, dict) and "tools" in payload:
+        if payload.get("tools") and isinstance(payload.get("tools"), dict):
+            payload["tools"] = [payload.get("tools")]
         items = payload.get("tools", [])
         if items and isinstance(items, list):
             tool.update(_merge_tools(items))
