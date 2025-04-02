@@ -215,7 +215,7 @@ class OpenAIChatService:
                         if openai_chunk:
                             # 提取文本内容
                             text = self._extract_text_from_openai_chunk(openai_chunk)
-                            if text:
+                            if text and settings.STREAM_OPTIMIZER_ENABLED:
                                 # 使用流式输出优化器处理文本输出
                                 async for (
                                     optimized_chunk

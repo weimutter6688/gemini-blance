@@ -167,9 +167,8 @@ class GeminiChatService:
                             json.loads(line), model, stream=True
                         )
                         text = self._extract_text_from_response(response_data)
-
-                        # 如果有文本内容，使用流式输出优化器处理
-                        if text:
+                        # 如果有文本内容，且开启了流式输出优化器，则使用流式输出优化器处理
+                        if text and settings.STREAM_OPTIMIZER_ENABLED:
                             # 使用流式输出优化器处理文本输出
                             async for (
                                 optimized_chunk
