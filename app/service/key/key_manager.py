@@ -81,6 +81,13 @@ class KeyManager:
 
         return {"valid_keys": valid_keys, "invalid_keys": invalid_keys}
 
+    async def get_first_valid_key(self) -> str:
+        """获取第一个有效的API key"""
+        async with self.failure_count_lock:
+            for key in self.key_failure_counts:
+                if self.key_failure_counts[key] < self.MAX_FAILURES:
+                    return key
+        return self.api_keys[0]
 
 _singleton_instance = None
 _singleton_lock = asyncio.Lock()

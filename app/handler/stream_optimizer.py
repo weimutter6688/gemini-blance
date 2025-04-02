@@ -107,15 +107,15 @@ class StreamOptimizer:
 
         # 计算智能延迟时间
         delay = self.calculate_delay(len(text))
-        if self.logger:
-            self.logger.info(f"Text length: {len(text)}, delay: {delay:.4f}s")
+        # if self.logger:
+        #     self.logger.info(f"Text length: {len(text)}, delay: {delay:.4f}s")
 
         # 根据文本长度决定输出方式
         if len(text) >= self.long_text_threshold:
             # 长文本：分块输出
             chunks = self.split_text_into_chunks(text)
-            if self.logger:
-                self.logger.info(f"Long text: splitting into {len(chunks)} chunks")
+            # if self.logger:
+            #     self.logger.info(f"Long text: splitting into {len(chunks)} chunks")
             for chunk_text in chunks:
                 chunk_response = create_response_chunk(chunk_text)
                 yield format_chunk(chunk_response)

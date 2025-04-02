@@ -89,6 +89,11 @@ def _get_safety_settings(model: str) -> List[Dict[str, str]]:
 def _build_payload(model: str, request: GeminiRequest) -> Dict[str, Any]:
     """构建请求payload"""
     request_dict = request.model_dump()
+    if request.generationConfig:
+        if request.generationConfig.maxOutputTokens is None:
+            # 如果未指定最大输出长度，则不传递该字段，解决截断的问题
+            request_dict["generationConfig"].pop("maxOutputTokens")
+    
     payload = {
         "contents": request_dict.get("contents", []),
         "tools": _build_tools(model, request_dict),

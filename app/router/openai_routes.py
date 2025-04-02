@@ -44,7 +44,7 @@ async def list_models(
 ):
     logger.info("-" * 50 + "list_models" + "-" * 50)
     logger.info("Handling models list request")
-    api_key = await key_manager.get_next_working_key()
+    api_key = await key_manager.get_first_valid_key()
     logger.info(f"Using API key: {api_key}")
     try:
         return model_service.get_gemini_openai_models(api_key)

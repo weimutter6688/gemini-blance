@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from typing import List, Optional, Union
 
-from app.core.constants import DEFAULT_MAX_TOKENS, DEFAULT_MODEL, DEFAULT_TEMPERATURE, DEFAULT_TOP_K, DEFAULT_TOP_P
+from app.core.constants import DEFAULT_MODEL, DEFAULT_TEMPERATURE, DEFAULT_TOP_K, DEFAULT_TOP_P
 
 
 class ChatRequest(BaseModel):
@@ -10,7 +10,7 @@ class ChatRequest(BaseModel):
     temperature: Optional[float] = DEFAULT_TEMPERATURE
     stream: Optional[bool] = False
     tools: Optional[List[dict]] = []
-    max_tokens: Optional[int] = DEFAULT_MAX_TOKENS
+    max_tokens: Optional[int] = None
     top_p: Optional[float] = DEFAULT_TOP_P
     top_k: Optional[int] = DEFAULT_TOP_K
     stop: Optional[List[str]] = []

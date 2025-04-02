@@ -115,7 +115,6 @@ def _build_payload(
         "contents": messages,
         "generationConfig": {
             "temperature": request.temperature,
-            "maxOutputTokens": request.max_tokens,
             "stopSequences": request.stop,
             "topP": request.top_p,
             "topK": request.top_k,
@@ -123,6 +122,8 @@ def _build_payload(
         "tools": _build_tools(request, messages),
         "safetySettings": _get_safety_settings(request.model),
     }
+    if request.max_tokens is not None:
+        payload["generationConfig"]["maxOutputTokens"] = request.max_tokens
     if request.model.endswith("-image") or request.model.endswith("-image-generation"):
         payload["generationConfig"]["responseModalities"] = ["Text", "Image"]
 
