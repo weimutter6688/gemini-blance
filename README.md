@@ -57,6 +57,7 @@
     # 基础配置
     BASE_URL="https://generativelanguage.googleapis.com/v1beta"  # Gemini API 基础 URL，默认无需修改
     MAX_FAILURES=3  # 允许单个key失败的次数，默认3次
+    TIME_OUT=300    # 请求超时时间，默认300s
 
     # 认证与安全配置
     API_KEYS=["your-gemini-api-key-1", "your-gemini-api-key-2"]  # Gemini API 密钥列表，用于负载均衡
@@ -84,6 +85,8 @@
     CLOUDFLARE_IMGBED_AUTH_CODE="your-cloudflare-imgber-auth-code" # CloudFlare图床的鉴权key，可在项目后台设置，若无鉴权则可直接置空。
 
     # stream_optimizer 相关配置
+    # 是否启用流式输出优化，默认false
+    STREAM_OPTIMIZER_ENABLED=false  
     STREAM_MIN_DELAY=0.016
     STREAM_MAX_DELAY=0.024
     STREAM_SHORT_TEXT_THRESHOLD=10
