@@ -62,33 +62,6 @@
                     <small class="help-text">Gemini API密钥列表，每行一个</small>
                 </div>
 
-                <!-- API Key Add Modal -->
-                <div id="apiKeyModal" class="modal">
-                    <div class="modal-content">
-                        <span class="close-btn" id="closeApiKeyModalBtn">&times;</span>
-                        <h2>批量添加 API 密钥</h2>
-                        <p>每行粘贴一个或多个密钥，将自动提取有效密钥并去重。</p>
-                        <textarea id="apiKeyBulkInput" rows="10" placeholder="在此处粘贴 API 密钥..."></textarea>
-                        <div class="modal-actions">
-                            <button type="button" id="confirmAddApiKeyBtn" class="save-btn">确认添加</button>
-                            <button type="button" id="cancelAddApiKeyBtn" class="reset-btn">取消</button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Reset Confirmation Modal -->
-                <div id="resetConfirmModal" class="modal">
-                    <div class="modal-content">
-                        <span class="close-btn" id="closeResetModalBtn">&times;</span>
-                        <h2>确认重置配置</h2>
-                        <p>确定要重置所有配置吗？<br>这将恢复到默认值，此操作不可撤销。</p>
-                        <div class="modal-actions">
-                            <button type="button" id="confirmResetBtn" class="reset-btn">确认重置</button>
-                            <button type="button" id="cancelResetBtn" class="save-btn">取消</button> <!-- Using save-btn style for cancel -->
-                        </div>
-                    </div>
-                </div>
-
                 <div class="config-item array-input">
                     <label for="ALLOWED_TOKENS">允许的令牌列表</label>
                      <div class="array-container" id="ALLOWED_TOKENS_container">
@@ -320,6 +293,33 @@
     <div class="copyright">
         © <script>document.write(new Date().getFullYear())</script> by <a href="https://linux.do/u/snaily" target="_blank"><img src="https://linux.do/user_avatar/linux.do/snaily/288/306510_2.gif" alt="snaily">snaily</a> | 
         <a href="https://github.com/snailyp/gemini-balance" target="_blank"><i class="fab fa-github"></i> GitHub</a>
+    </div>
+
+    <!-- API Key Add Modal (Moved outside container) -->
+    <div id="apiKeyModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" id="closeApiKeyModalBtn">&times;</span>
+            <h2>批量添加 API 密钥</h2>
+            <p>每行粘贴一个或多个密钥，将自动提取有效密钥并去重。</p>
+            <textarea id="apiKeyBulkInput" rows="10" placeholder="在此处粘贴 API 密钥..."></textarea>
+            <div class="modal-actions">
+                <button type="button" id="confirmAddApiKeyBtn" class="save-btn">确认添加</button>
+                <button type="button" id="cancelAddApiKeyBtn" class="reset-btn">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reset Confirmation Modal (Moved outside container) -->
+    <div id="resetConfirmModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" id="closeResetModalBtn">&times;</span>
+            <h2>确认重置配置</h2>
+            <p>确定要重置所有配置吗？<br>这将恢复到默认值，此操作不可撤销。</p>
+            <div class="modal-actions">
+                <button type="button" id="confirmResetBtn" class="reset-btn">确认重置</button>
+                <button type="button" id="cancelResetBtn" class="save-btn">取消</button> <!-- Using save-btn style for cancel -->
+            </div>
+        </div>
     </div>
     
     <script src="/static/js/config_editor.js"></script>

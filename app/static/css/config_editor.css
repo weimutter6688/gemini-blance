@@ -616,15 +616,17 @@ input:checked + .toggle-slider:before {
 /* Modal Styles */
 .modal {
     display: none; /* Hidden by default */
-    position: fixed; /* Stay in place */
+    position: fixed; /* Change back to fixed */
     z-index: 1001; /* Sit on top */
     left: 0;
     top: 0;
     width: 100%; /* Full width */
     height: 100%; /* Full height */
-    overflow: auto; /* Enable scroll if needed */
+    /* overflow: auto; Removed */
     background-color: rgba(0,0,0,0.6); /* Black w/ opacity */
-    backdrop-filter: blur(5px);
+    /* backdrop-filter: blur(5px); Removed */
+    align-items: center;
+    justify-content: center;
 }
 
 .modal.show {
