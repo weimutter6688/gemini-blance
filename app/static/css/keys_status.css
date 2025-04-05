@@ -30,7 +30,7 @@ body {
 h1 {
     color: #2c3e50;
     text-align: center;
-    margin-bottom: 30px;
+    margin-bottom: 15px;
     font-weight: 700;
     font-size: 32px;
     position: relative;
@@ -47,6 +47,61 @@ h1::after {
     height: 4px;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     border-radius: 2px;
+}
+
+/* 导航标签样式 */
+.nav-tabs {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 30px;
+    border-bottom: 2px solid rgba(0,0,0,0.1);
+    padding-bottom: 10px;
+    width: 100%;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.tab-link {
+    color: #2c3e50;
+    text-decoration: none;
+    padding: 12px 25px;
+    border-radius: 8px 8px 0 0;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    position: relative;
+    margin: 0 5px;
+    flex: 1;
+    text-align: center;
+}
+
+.tab-link:hover {
+    background: rgba(102, 126, 234, 0.1);
+}
+
+.tab-link.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    box-shadow: 0 5px 15px rgba(118, 75, 162, 0.3);
+}
+
+.tab-link.active::after {
+    content: '';
+    position: absolute;
+    bottom: -12px;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 2px;
+}
+
+.tab-link i {
+    font-size: 16px;
 }
 
 .key-list {
@@ -161,27 +216,34 @@ li:hover {
 }
 
 .verify-btn, .copy-btn {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
     border: none;
     padding: 8px 15px;
-    border-radius: 8px;
+    border-radius: 30px;
     cursor: pointer;
     font-size: 14px;
     font-weight: bold;
     transition: all 0.3s ease;
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 5px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
 }
 
 .verify-btn {
-    background: linear-gradient(135deg, #2ecc71, #27ae60);
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
 .verify-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(46, 204, 113, 0.3);
+    box-shadow: 0 5px 15px rgba(118, 75, 162, 0.3);
+    background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+}
+
+.verify-btn:active {
+    transform: translateY(1px);
+    box-shadow: 0 5px 10px rgba(118, 75, 162, 0.2);
 }
 
 .verify-btn:disabled {
@@ -195,13 +257,19 @@ li:hover {
     font-size: 14px;
 }
 
+.copy-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
 .copy-btn:hover {
     transform: translateY(-2px);
     box-shadow: 0 5px 15px rgba(118, 75, 162, 0.3);
+    background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
 }
 
 .copy-btn:active {
-    transform: translateY(0);
+    transform: translateY(1px);
+    box-shadow: 0 5px 10px rgba(118, 75, 162, 0.2);
 }
 
 .copy-btn i {
@@ -392,6 +460,19 @@ li:hover {
     }
     h1 {
         font-size: 24px;
+    }
+    .nav-tabs {
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+    }
+    .tab-link {
+        width: 100%;
+        justify-content: center;
+        border-radius: 8px;
+    }
+    .tab-link.active::after {
+        display: none;
     }
     .key-list h2 {
         font-size: 1.2em;

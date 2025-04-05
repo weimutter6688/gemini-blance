@@ -19,7 +19,15 @@
         <button class="refresh-btn" onclick="refreshPage(this)">
             <i class="fas fa-sync-alt"></i>
         </button>
-        <h1>API密钥状态</h1>
+        <h1>Gemini Balance</h1>
+        <div class="nav-tabs">
+            <a href="/config" class="tab-link">
+                <i class="fas fa-cog"></i> 配置编辑
+            </a>
+            <a href="/keys" class="tab-link active">
+                <i class="fas fa-key"></i> 密钥管理
+            </a>
+        </div>
         <div class="key-list">
             <h2 onclick="toggleSection(this, 'validKeys')">
                 <span>

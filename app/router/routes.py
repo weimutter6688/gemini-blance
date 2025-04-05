@@ -8,7 +8,7 @@ from fastapi.templating import Jinja2Templates
 
 from app.core.security import verify_auth_token
 from app.log.logger import get_routes_logger
-from app.router import gemini_routes, openai_routes
+from app.router import gemini_routes, openai_routes, config_routes
 from app.service.key.key_manager import get_key_manager_instance
 
 logger = get_routes_logger()
@@ -28,6 +28,7 @@ def setup_routers(app: FastAPI) -> None:
     app.include_router(openai_routes.router)
     app.include_router(gemini_routes.router)
     app.include_router(gemini_routes.router_v1beta)
+    app.include_router(config_routes.router)
 
     # 添加页面路由
     setup_page_routes(app)
@@ -96,6 +97,21 @@ def setup_page_routes(app: FastAPI) -> None:
             )
         except Exception as e:
             logger.error(f"Error retrieving keys status: {str(e)}")
+            raise
+            
+    @app.get("/config", response_class=HTMLResponse)
+    async def config_page(request: Request):
+        """配置编辑页面"""
+        try:
+            auth_token = request.cookies.get("auth_token")
+            if not auth_token or not verify_auth_token(auth_token):
+                logger.warning("Unauthorized access attempt to config page")
+                return RedirectResponse(url="/", status_code=302)
+                
+            logger.info("Config page accessed successfully")
+            return templates.TemplateResponse("config_editor.html", {"request": request})
+        except Exception as e:
+            logger.error(f"Error accessing config page: {str(e)}")
             raise
 
 

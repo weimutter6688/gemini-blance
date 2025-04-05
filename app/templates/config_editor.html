@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>配置编辑器</title>
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="theme-color" content="#764ba2">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="GBalance">
+    <link rel="icon" href="/static/icons/icon-192x192.png">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/css/config_editor.css">
+</head>
+<body>
+    <div class="container">
+        <button class="refresh-btn" onclick="refreshPage(this)">
+            <i class="fas fa-sync-alt"></i>
+        </button>
+        <h1>Gemini Balance</h1>
+        <div class="nav-tabs">
+            <a href="/config" class="tab-link active">
+                <i class="fas fa-cog"></i> 配置编辑
+            </a>
+            <a href="/keys" class="tab-link">
+                <i class="fas fa-key"></i> 密钥管理
+            </a>
+        </div>
+        
+        <div class="config-tabs">
+            <button class="tab-btn active" data-tab="api">API配置</button>
+            <button class="tab-btn" data-tab="model">模型配置</button>
+            <button class="tab-btn" data-tab="image">图像生成</button>
+            <button class="tab-btn" data-tab="stream">流式输出</button>
+        </div>
+        
+        <div class="save-status" id="saveStatus">
+            <span class="status-icon"><i class="fas fa-check-circle"></i></span>
+            <span class="status-text">配置已保存</span>
+        </div>
+        
+        <form id="configForm">
+            <!-- API相关配置 -->
+            <div class="config-section active" id="api-section">
+                <h2><i class="fas fa-key"></i> API相关配置</h2>
+                
+                <div class="config-item array-input">
+                    <label for="API_KEYS">API密钥列表</label>
+                    <div class="search-container">
+                         <input type="search" id="apiKeySearchInput" placeholder="搜索密钥...">
+                    </div>
+                    <div class="array-container" id="API_KEYS_container">
+                        <!-- 数组项将在这里动态添加 -->
+                    </div>
+                    <div class="array-controls">
+                        <button type="button" class="add-btn" id="addApiKeyBtn">
+                            <i class="fas fa-plus"></i> 添加密钥
+                        </button>
+                    </div>
+                    <small class="help-text">Gemini API密钥列表，每行一个</small>
+                </div>
+
+                <!-- API Key Add Modal -->
+                <div id="apiKeyModal" class="modal">
+                    <div class="modal-content">
+                        <span class="close-btn" id="closeApiKeyModalBtn">&times;</span>
+                        <h2>批量添加 API 密钥</h2>
+                        <p>每行粘贴一个或多个密钥，将自动提取有效密钥并去重。</p>
+                        <textarea id="apiKeyBulkInput" rows="10" placeholder="在此处粘贴 API 密钥..."></textarea>
+                        <div class="modal-actions">
+                            <button type="button" id="confirmAddApiKeyBtn" class="save-btn">确认添加</button>
+                            <button type="button" id="cancelAddApiKeyBtn" class="reset-btn">取消</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Reset Confirmation Modal -->
+                <div id="resetConfirmModal" class="modal">
+                    <div class="modal-content">
+                        <span class="close-btn" id="closeResetModalBtn">&times;</span>
+                        <h2>确认重置配置</h2>
+                        <p>确定要重置所有配置吗？<br>这将恢复到默认值，此操作不可撤销。</p>
+                        <div class="modal-actions">
+                            <button type="button" id="confirmResetBtn" class="reset-btn">确认重置</button>
+                            <button type="button" id="cancelResetBtn" class="save-btn">取消</button> <!-- Using save-btn style for cancel -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="config-item array-input">
+                    <label for="ALLOWED_TOKENS">允许的令牌列表</label>
+                     <div class="array-container" id="ALLOWED_TOKENS_container">
+                         <!-- 数组项将在这里动态添加 -->
+                     </div>
+                     <div class="array-controls">
+                         <button type="button" class="add-btn" onclick="addArrayItem('ALLOWED_TOKENS')">
+                             <i class="fas fa-plus"></i> 添加令牌
+                         </button>
+                     </div>
+                     <small class="help-text">允许访问API的令牌列表</small>
+                 </div>
+                
+                <div class="config-item">
+                    <label for="AUTH_TOKEN">认证令牌</label>
+                    <input type="text" id="AUTH_TOKEN" name="AUTH_TOKEN" placeholder="默认使用ALLOWED_TOKENS中的第一个">
+                    <small class="help-text">用于API认证的令牌</small>
+                </div>
+                
+                <div class="config-item">
+                    <label for="BASE_URL">API基础URL</label>
+                    <input type="text" id="BASE_URL" name="BASE_URL" placeholder="https://generativelanguage.googleapis.com/v1beta">
+                    <small class="help-text">Gemini API的基础URL</small>
+                </div>
+                
+                <div class="config-item">
+                    <label for="MAX_FAILURES">最大失败次数</label>
+                    <input type="number" id="MAX_FAILURES" name="MAX_FAILURES" min="1" max="100">
+                    <small class="help-text">API密钥失败后标记为无效的次数</small>
+                </div>
+                
+                <div class="config-item">
+                    <label for="TIME_OUT">请求超时时间（秒）</label>
+                    <input type="number" id="TIME_OUT" name="TIME_OUT" min="1" max="600">
+                    <small class="help-text">API请求的超时时间</small>
+                </div>
+            </div>
+            
+            <!-- 模型相关配置 -->
+            <div class="config-section" id="model-section">
+                <h2><i class="fas fa-robot"></i> 模型相关配置</h2>
+                
+                <div class="config-item">
+                    <label for="TEST_MODEL">测试模型</label>
+                    <input type="text" id="TEST_MODEL" name="TEST_MODEL" placeholder="gemini-1.5-flash">
+                    <small class="help-text">用于测试API密钥的模型</small>
+                </div>
+                
+                <div class="config-item array-input">
+                    <label for="IMAGE_MODELS">图像模型列表</label>
+                    <div class="array-container" id="IMAGE_MODELS_container">
+                        <!-- 数组项将在这里动态添加 -->
+                        <div class="array-controls">
+                            <button type="button" class="add-btn" onclick="addArrayItem('IMAGE_MODELS')">
+                                <i class="fas fa-plus"></i> 添加模型
+                            </button>
+                        </div>
+                    </div>
+                    <small class="help-text">支持图像处理的模型列表</small>
+                </div>
+                
+                <div class="config-item array-input">
+                    <label for="SEARCH_MODELS">搜索模型列表</label>
+                    <div class="array-container" id="SEARCH_MODELS_container">
+                        <!-- 数组项将在这里动态添加 -->
+                        <div class="array-controls">
+                            <button type="button" class="add-btn" onclick="addArrayItem('SEARCH_MODELS')">
+                                <i class="fas fa-plus"></i> 添加模型
+                            </button>
+                        </div>
+                    </div>
+                    <small class="help-text">支持搜索功能的模型列表</small>
+                </div>
+                
+                <div class="config-item array-input">
+                    <label for="FILTERED_MODELS">过滤模型列表</label>
+                    <div class="array-container" id="FILTERED_MODELS_container">
+                        <!-- 数组项将在这里动态添加 -->
+                        <div class="array-controls">
+                            <button type="button" class="add-btn" onclick="addArrayItem('FILTERED_MODELS')">
+                                <i class="fas fa-plus"></i> 添加模型
+                            </button>
+                        </div>
+                    </div>
+                    <small class="help-text">需要过滤的模型列表</small>
+                </div>
+                
+                <div class="config-item toggle">
+                    <label for="TOOLS_CODE_EXECUTION_ENABLED">启用代码执行工具</label>
+                    <div class="toggle-switch">
+                        <input type="checkbox" id="TOOLS_CODE_EXECUTION_ENABLED" name="TOOLS_CODE_EXECUTION_ENABLED">
+                        <span class="toggle-slider"></span>
+                    </div>
+                </div>
+                
+                <div class="config-item toggle">
+                    <label for="SHOW_SEARCH_LINK">显示搜索链接</label>
+                    <div class="toggle-switch">
+                        <input type="checkbox" id="SHOW_SEARCH_LINK" name="SHOW_SEARCH_LINK">
+                        <span class="toggle-slider"></span>
+                    </div>
+                </div>
+                
+                <div class="config-item toggle">
+                    <label for="SHOW_THINKING_PROCESS">显示思考过程</label>
+                    <div class="toggle-switch">
+                        <input type="checkbox" id="SHOW_THINKING_PROCESS" name="SHOW_THINKING_PROCESS">
+                        <span class="toggle-slider"></span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 图像生成相关配置 -->
+            <div class="config-section" id="image-section">
+                <h2><i class="fas fa-image"></i> 图像生成配置</h2>
+                
+                <div class="config-item">
+                    <label for="PAID_KEY">付费API密钥</label>
+                    <input type="text" id="PAID_KEY" name="PAID_KEY" placeholder="AIzaSyxxxxxxxxxxxxxxxxxxx">
+                    <small class="help-text">用于图像生成的付费API密钥</small>
+                </div>
+                
+                <div class="config-item">
+                    <label for="CREATE_IMAGE_MODEL">图像生成模型</label>
+                    <input type="text" id="CREATE_IMAGE_MODEL" name="CREATE_IMAGE_MODEL" placeholder="imagen-3.0-generate-002">
+                    <small class="help-text">用于图像生成的模型</small>
+                </div>
+                
+                <div class="config-item">
+                    <label for="UPLOAD_PROVIDER">上传提供商</label>
+                    <select id="UPLOAD_PROVIDER" name="UPLOAD_PROVIDER">
+                        <option value="smms" selected>SM.MS</option>
+                        <option value="picgo">PicGo</option>
+                        <option value="cloudflare">Cloudflare</option>
+                    </select>
+                    <small class="help-text">图片上传服务提供商</small>
+                </div>
+                
+                <div class="config-item provider-config" data-provider="smms">
+                    <label for="SMMS_SECRET_TOKEN">SM.MS密钥</label>
+                    <input type="text" id="SMMS_SECRET_TOKEN" name="SMMS_SECRET_TOKEN" placeholder="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX">
+                    <small class="help-text">SM.MS图床的密钥</small>
+                </div>
+                
+                <div class="config-item provider-config" data-provider="picgo">
+                    <label for="PICGO_API_KEY">PicGo API密钥</label>
+                    <input type="text" id="PICGO_API_KEY" name="PICGO_API_KEY" placeholder="xxxx">
+                    <small class="help-text">PicGo的API密钥</small>
+                </div>
+                
+                <div class="config-item provider-config" data-provider="cloudflare">
+                    <label for="CLOUDFLARE_IMGBED_URL">Cloudflare图床URL</label>
+                    <input type="text" id="CLOUDFLARE_IMGBED_URL" name="CLOUDFLARE_IMGBED_URL" placeholder="https://xxxxxxx.pages.dev/upload">
+                    <small class="help-text">Cloudflare图床的URL</small>
+                </div>
+                
+                <div class="config-item provider-config" data-provider="cloudflare">
+                    <label for="CLOUDFLARE_IMGBED_AUTH_CODE">Cloudflare认证码</label>
+                    <input type="text" id="CLOUDFLARE_IMGBED_AUTH_CODE" name="CLOUDFLARE_IMGBED_AUTH_CODE" placeholder="xxxxxxxxx">
+                    <small class="help-text">Cloudflare图床的认证码</small>
+                </div>
+            </div>
+            
+            <!-- 流式输出优化器配置 -->
+            <div class="config-section" id="stream-section">
+                <h2><i class="fas fa-stream"></i> 流式输出优化器</h2>
+                
+                <div class="config-item toggle">
+                    <label for="STREAM_OPTIMIZER_ENABLED">启用流式输出优化</label>
+                    <div class="toggle-switch">
+                        <input type="checkbox" id="STREAM_OPTIMIZER_ENABLED" name="STREAM_OPTIMIZER_ENABLED">
+                        <span class="toggle-slider"></span>
+                    </div>
+                </div>
+                
+                <div class="config-item">
+                    <label for="STREAM_MIN_DELAY">最小延迟（秒）</label>
+                    <input type="number" id="STREAM_MIN_DELAY" name="STREAM_MIN_DELAY" min="0" max="1" step="0.001">
+                    <small class="help-text">流式输出的最小延迟时间</small>
+                </div>
+                
+                <div class="config-item">
+                    <label for="STREAM_MAX_DELAY">最大延迟（秒）</label>
+                    <input type="number" id="STREAM_MAX_DELAY" name="STREAM_MAX_DELAY" min="0" max="1" step="0.001">
+                    <small class="help-text">流式输出的最大延迟时间</small>
+                </div>
+                
+                <div class="config-item">
+                    <label for="STREAM_SHORT_TEXT_THRESHOLD">短文本阈值</label>
+                    <input type="number" id="STREAM_SHORT_TEXT_THRESHOLD" name="STREAM_SHORT_TEXT_THRESHOLD" min="1" max="100">
+                    <small class="help-text">短文本的字符阈值</small>
+                </div>
+                
+                <div class="config-item">
+                    <label for="STREAM_LONG_TEXT_THRESHOLD">长文本阈值</label>
+                    <input type="number" id="STREAM_LONG_TEXT_THRESHOLD" name="STREAM_LONG_TEXT_THRESHOLD" min="1" max="1000">
+                    <small class="help-text">长文本的字符阈值</small>
+                </div>
+                
+                <div class="config-item">
+                    <label for="STREAM_CHUNK_SIZE">分块大小</label>
+                    <input type="number" id="STREAM_CHUNK_SIZE" name="STREAM_CHUNK_SIZE" min="1" max="100">
+                    <small class="help-text">流式输出的分块大小</small>
+                </div>
+            </div>
+            
+            <div class="form-actions">
+                <button type="button" id="saveBtn" class="save-btn">
+                    <i class="fas fa-save"></i> 保存配置
+                </button>
+                <button type="button" id="resetBtn" class="reset-btn">
+                    <i class="fas fa-undo"></i> 重置配置
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div class="scroll-buttons">
+        <button class="scroll-btn" onclick="scrollToTop()" title="回到顶部">
+            <i class="fas fa-chevron-up"></i>
+        </button>
+        <button class="scroll-btn" onclick="scrollToBottom()" title="滚动到底部">
+            <i class="fas fa-chevron-down"></i>
+        </button>
+    </div>
+
+    <div id="notification" class="notification"></div>
+
+    <div class="copyright">
+        © <script>document.write(new Date().getFullYear())</script> by <a href="https://linux.do/u/snaily" target="_blank"><img src="https://linux.do/user_avatar/linux.do/snaily/288/306510_2.gif" alt="snaily">snaily</a> | 
+        <a href="https://github.com/snailyp/gemini-balance" target="_blank"><i class="fab fa-github"></i> GitHub</a>
+    </div>
+    
+    <script src="/static/js/config_editor.js"></script>
+</body>
+</html>

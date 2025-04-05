@@ -153,3 +153,7 @@ def get_middleware_logger():
 
 def get_routes_logger():
     return Logger.setup_logger("routes")
+
+
+def get_config_routes_logger():
+    return Logger.setup_logger("config_routes")
