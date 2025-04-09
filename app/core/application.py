@@ -5,13 +5,15 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
-from app.config.config import settings
+from app.config.config import settings, sync_initial_settings
 from app.log.logger import get_application_logger
 from app.middleware.middleware import setup_middlewares
 from app.exception.exceptions import setup_exception_handlers
 from app.router.routes import setup_routers
 from app.service.key.key_manager import get_key_manager_instance
 from app.core.initialization import initialize_app
+from app.database.connection import connect_to_db, disconnect_from_db
+from app.database.initialization import initialize_database
 
 logger = get_application_logger()
 
@@ -26,17 +28,30 @@ async def lifespan(app: FastAPI):
     # 启动事件
     logger.info("Application starting up...")
     try:
-        # 初始化KeyManager
+        # 初始化数据库
+        initialize_database()
+        logger.info("Database initialized successfully")
+        
+        # 连接到数据库
+        await connect_to_db()
+        
+        # 同步初始配置（DB优先，然后同步回DB）
+        await sync_initial_settings()
+
+        # 初始化KeyManager (使用可能已从DB更新的settings)
         await get_key_manager_instance(settings.API_KEYS)
         logger.info("KeyManager initialized successfully")
     except Exception as e:
-        logger.error(f"Failed to initialize KeyManager: {str(e)}")
+        logger.error(f"Failed to initialize application: {str(e)}")
         raise
     
     yield  # 应用程序运行期间
     
     # 关闭事件
     logger.info("Application shutting down...")
+    
+    # 断开数据库连接
+    await disconnect_from_db()
 
 def create_app() -> FastAPI:
     """

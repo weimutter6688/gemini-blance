@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>错误日志管理</title>
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="theme-color" content="#764ba2">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="GBalance">
+    <link rel="icon" href="/static/icons/icon-192x192.png">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/error_logs.css') }}">
+</head>
+<body>
+    <div class="container">
+        <button class="refresh-btn" onclick="refreshPage(this)">
+            <i class="fas fa-sync-alt"></i>
+        </button>
+        <div class="row">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h1>Gemini Balance</h1>
+                    <div class="nav-tabs">
+                        <a href="/config" class="tab-link">
+                            <i class="fas fa-cog"></i> 配置编辑
+                        </a>
+                        <a href="/keys" class="tab-link">
+                            <i class="fas fa-key"></i> 密钥管理
+                        </a>
+                        <a href="/logs" class="tab-link active">
+                            <i class="fas fa-exclamation-triangle"></i> 错误日志
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">错误日志列表</h5>
+                        <div class="d-flex">
+                            <div class="input-group me-2">
+                                <span class="input-group-text">每页显示</span>
+                                <select id="pageSize" class="form-select">
+                                    <option value="10">10</option>
+                                    <option value="20" selected>20</option>
+                                    <option value="50">50</option>
+                                    <option value="100">100</option>
+                                </select>
+                                <span class="input-group-text">条</span>
+                            </div>
+                            <button id="refreshBtn" class="btn btn-primary">
+                                <i class="bi bi-arrow-clockwise"></i> 刷新
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Gemini密钥</th>
+                                        <th>错误日志</th>
+                                        <th>请求时间</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="errorLogsTable">
+                                    <!-- 错误日志数据将通过JavaScript动态加载 -->
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div id="loadingIndicator" class="text-center my-4 d-none">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">加载中...</span>
+                            </div>
+                            <p class="mt-2">加载中，请稍候...</p>
+                        </div>
+                        
+                        <div id="noDataMessage" class="text-center my-4 d-none">
+                            <p class="text-muted">暂无错误日志数据</p>
+                        </div>
+                        
+                        <div id="errorMessage" class="alert alert-danger my-4 d-none">
+                            加载错误日志失败，请稍后重试。
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <nav aria-label="错误日志分页">
+                            <ul class="pagination justify-content-center mb-0" id="pagination">
+                                <!-- 分页控件将通过JavaScript动态加载 -->
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="scroll-buttons">
+        <button class="scroll-btn" onclick="scrollToTop()" title="回到顶部">
+            <i class="fas fa-chevron-up"></i>
+        </button>
+        <button class="scroll-btn" onclick="scrollToBottom()" title="滚动到底部">
+            <i class="fas fa-chevron-down"></i>
+        </button>
+    </div>
+
+    <div id="copyStatus"></div>
+
+    <div class="copyright">
+        © <script>document.write(new Date().getFullYear())</script> by <a href="https://linux.do/u/snaily" target="_blank"><img src="https://linux.do/user_avatar/linux.do/snaily/288/306510_2.gif" alt="snaily">snaily</a> | 
+        <a href="https://github.com/snailyp/gemini-balance" target="_blank"><i class="fab fa-github"></i> GitHub</a>
+    </div>
+    
+    <!-- 错误日志详情模态框 -->
+    <div class="modal fade" id="logDetailModal" tabindex="-1" aria-labelledby="logDetailModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="logDetailModalLabel">错误日志详情</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <h6>Gemini密钥:</h6>
+                        <pre id="modalGeminiKey" class="bg-light p-2 rounded"></pre>
+                    </div>
+                    <div class="mb-3">
+                        <h6>错误日志:</h6>
+                        <pre id="modalErrorLog" class="bg-light p-2 rounded"></pre>
+                    </div>
+                    <div class="mb-3">
+                        <h6>请求消息:</h6>
+                        <pre id="modalRequestMsg" class="bg-light p-2 rounded"></pre>
+                    </div>
+                    <div>
+                        <h6>请求时间:</h6>
+                        <p id="modalRequestTime"></p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', path='/js/error_logs.js') }}"></script>
+</body>
+</html>

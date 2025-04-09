@@ -107,4 +107,12 @@ async def get_key_manager_instance(api_keys: list = None) -> KeyManager:
             if api_keys is None:
                 raise ValueError("API keys are required to initialize the KeyManager")
             _singleton_instance = KeyManager(api_keys)
+            logger.info("KeyManager instance created.")
         return _singleton_instance
+async def reset_key_manager_instance():
+    """重置 KeyManager 单例实例"""
+    global _singleton_instance
+    async with _singleton_lock:
+        if _singleton_instance:
+            _singleton_instance = None
+            logger.info("KeyManager instance reset.")

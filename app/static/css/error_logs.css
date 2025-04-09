@@ -1,0 +1,271 @@
+/* 错误日志页面样式 */
+
+/* 全局样式 */
+body {
+    font-family: 'Roboto', sans-serif;
+    background-color: #f8f9fa;
+    color: #333;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+h1 {
+    color: #764ba2;
+    font-weight: 700;
+    margin-bottom: 0;
+}
+
+/* 导航栏样式 */
+.nav-tabs {
+    display: flex;
+    margin-bottom: 20px;
+    border-bottom: none;
+}
+
+.tab-link {
+    padding: 10px 20px;
+    margin-right: 5px;
+    color: #555;
+    text-decoration: none;
+    border-radius: 5px;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+}
+
+.tab-link i {
+    margin-right: 5px;
+}
+
+.tab-link:hover {
+    background-color: #f0f0f0;
+    color: #764ba2;
+}
+
+.tab-link.active {
+    background-color: #764ba2;
+    color: white;
+}
+
+/* 卡片样式 */
+.card {
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+    border: none;
+}
+
+.card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #eee;
+    padding: 15px 20px;
+    border-radius: 10px 10px 0 0 !important;
+}
+
+.card-body {
+    padding: 20px;
+}
+
+.card-footer {
+    background-color: #f8f9fa;
+    border-top: 1px solid #eee;
+    padding: 15px 20px;
+    border-radius: 0 0 10px 10px !important;
+}
+
+/* 表格样式 */
+.table {
+    font-size: 0.9rem;
+}
+
+.table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+}
+
+/* 错误日志内容截断 */
+.error-log-content {
+    max-width: 300px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* 模态框样式 */
+.modal-dialog {
+    max-width: 800px;
+}
+
+pre {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+/* 分页样式 */
+.pagination .page-item.active .page-link {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+.pagination .page-link {
+    color: #0d6efd;
+}
+
+/* 按钮样式 */
+.btn-view-details {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
+}
+
+/* 加载指示器样式 */
+#loadingIndicator .spinner-border {
+    width: 3rem;
+    height: 3rem;
+}
+
+/* 刷新按钮样式 */
+.refresh-btn {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #764ba2;
+    color: white;
+    border: none;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    z-index: 1000;
+    transition: all 0.3s ease;
+}
+
+.refresh-btn:hover {
+    background-color: #5d3b82;
+    transform: scale(1.1);
+}
+
+.refresh-btn i {
+    font-size: 18px;
+}
+
+.rotating {
+    animation: rotate 1s linear infinite;
+}
+
+@keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* 滚动按钮样式 */
+.scroll-buttons {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 1000;
+}
+
+.scroll-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #764ba2;
+    color: white;
+    border: none;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.scroll-btn:hover {
+    background-color: #5d3b82;
+    transform: scale(1.1);
+}
+
+/* 版权信息样式 */
+.copyright {
+    text-align: center;
+    margin-top: 30px;
+    padding: 20px 0;
+    color: #666;
+    font-size: 0.9rem;
+    border-top: 1px solid #eee;
+}
+
+.copyright a {
+    color: #764ba2;
+    text-decoration: none;
+}
+
+.copyright a:hover {
+    text-decoration: underline;
+}
+
+.copyright img {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    vertical-align: middle;
+    margin-right: 5px;
+}
+
+/* 复制状态提示 */
+#copyStatus {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+#copyStatus.show {
+    opacity: 1;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+    .d-flex.justify-content-between {
+        flex-direction: column;
+        align-items: flex-start !important;
+    }
+    
+    .d-flex.justify-content-between > div {
+        margin-top: 1rem;
+        width: 100%;
+    }
+    
+    .card-header .d-flex {
+        flex-direction: column;
+    }
+    
+    .card-header .input-group {
+        margin-bottom: 0.5rem;
+        margin-right: 0 !important;
+    }
+    
+    #refreshBtn {
+        width: 100%;
+    }
+}

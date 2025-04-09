@@ -21,7 +21,7 @@ async def get_config(request: Request):
     if not auth_token or not verify_auth_token(auth_token):
         logger.warning("Unauthorized access attempt to config page")
         return RedirectResponse(url="/", status_code=302)
-    return ConfigService.get_config()
+    return await ConfigService.get_config()
 
 
 @router.put("", response_model=Dict[str, Any])
@@ -31,7 +31,7 @@ async def update_config(config_data: Dict[str, Any], request: Request):
         logger.warning("Unauthorized access attempt to config page")
         return RedirectResponse(url="/", status_code=302)
     try:
-        return ConfigService.update_config(config_data)
+        return await ConfigService.update_config(config_data)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -43,6 +43,6 @@ async def reset_config(request: Request):
         logger.warning("Unauthorized access attempt to config page")
         return RedirectResponse(url="/", status_code=302)
     try:
-        return ConfigService.reset_config()
+        return await ConfigService.reset_config()
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

@@ -8,7 +8,7 @@ from fastapi.templating import Jinja2Templates
 
 from app.core.security import verify_auth_token
 from app.log.logger import get_routes_logger
-from app.router import gemini_routes, openai_routes, config_routes
+from app.router import gemini_routes, openai_routes, config_routes, log_routes
 from app.service.key.key_manager import get_key_manager_instance
 
 logger = get_routes_logger()
@@ -29,6 +29,7 @@ def setup_routers(app: FastAPI) -> None:
     app.include_router(gemini_routes.router)
     app.include_router(gemini_routes.router_v1beta)
     app.include_router(config_routes.router)
+    app.include_router(log_routes.router)
 
     # 添加页面路由
     setup_page_routes(app)
@@ -112,6 +113,21 @@ def setup_page_routes(app: FastAPI) -> None:
             return templates.TemplateResponse("config_editor.html", {"request": request})
         except Exception as e:
             logger.error(f"Error accessing config page: {str(e)}")
+            raise
+            
+    @app.get("/logs", response_class=HTMLResponse)
+    async def logs_page(request: Request):
+        """错误日志页面"""
+        try:
+            auth_token = request.cookies.get("auth_token")
+            if not auth_token or not verify_auth_token(auth_token):
+                logger.warning("Unauthorized access attempt to logs page")
+                return RedirectResponse(url="/", status_code=302)
+                
+            logger.info("Logs page accessed successfully")
+            return templates.TemplateResponse("error_logs.html", {"request": request})
+        except Exception as e:
+            logger.error(f"Error accessing logs page: {str(e)}")
             raise
 
 

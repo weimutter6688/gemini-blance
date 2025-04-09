@@ -37,4 +37,4 @@ def initialize_app() -> None:
     ]
     
     ensure_directories_exist(required_directories)
-    logger.info("Application initialization completed")
+    logger.info("core initialization completed")
