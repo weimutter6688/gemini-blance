@@ -36,6 +36,11 @@ async def get_next_working_key_wrapper(
     return await key_manager.get_next_working_key()
 
 
+async def get_openai_chat_service(key_manager: KeyManager = Depends(get_key_manager)):
+    """获取OpenAI聊天服务实例"""
+    return OpenAIChatService(settings.BASE_URL, key_manager)
+
+
 @router.get("/v1/models")
 @router.get("/hf/v1/models")
 async def list_models(
@@ -62,12 +67,12 @@ async def chat_completion(
     request: ChatRequest,
     _=Depends(security_service.verify_authorization),
     api_key: str = Depends(get_next_working_key_wrapper),
-    key_manager: KeyManager = Depends(get_key_manager),
+    key_manager: KeyManager = Depends(get_key_manager), # 保留 key_manager 用于获取 paid_key
+    chat_service: OpenAIChatService = Depends(get_openai_chat_service),
 ):
     # 如果model是imagen3,使用paid_key
     if request.model == f"{settings.CREATE_IMAGE_MODEL}-chat":
         api_key = await key_manager.get_paid_key()
-    chat_service = OpenAIChatService(settings.BASE_URL, key_manager)
     logger.info("-" * 50 + "chat_completion" + "-" * 50)
     logger.info(f"Handling chat completion request for model: {request.model}")
     logger.info(f"Request: \n{request.model_dump_json(indent=2)}")
