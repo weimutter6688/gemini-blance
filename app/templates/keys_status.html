@@ -1,145 +1,293 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>API密钥状态</title>
-    <link rel="manifest" href="/static/manifest.json">
-    <meta name="theme-color" content="#764ba2">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black">
-    <meta name="apple-mobile-web-app-title" content="GBalance">
-    <link rel="icon" href="/static/icons/icon-192x192.png">
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" href="/static/css/keys_status.css">
-</head>
-<body>
-    <div class="container">
-        <button class="refresh-btn" onclick="refreshPage(this)">
-            <i class="fas fa-sync-alt"></i>
-        </button>
-        <h1>Gemini Balance</h1>
-        <div class="nav-tabs">
-            <a href="/config" class="tab-link">
-                <i class="fas fa-cog"></i> 配置编辑
-            </a>
-            <a href="/keys" class="tab-link active">
-                <i class="fas fa-key"></i> 密钥管理
-            </a>
-            <a href="/logs" class="tab-link">
-                <i class="fas fa-exclamation-triangle"></i> 错误日志
-            </a>
-        </div>
-        <div class="key-list">
-            <h2 onclick="toggleSection(this, 'validKeys')">
-                <span>
-                    <i class="fas fa-chevron-down toggle-icon"></i>
-                    <i class="fas fa-check-circle" style="color: #27ae60;"></i>
-                    有效密钥
-                </span>
-                <button class="copy-btn" onclick="event.stopPropagation(); copyKeys('valid')">
-                    <i class="fas fa-copy"></i>
-                    批量复制
-                </button>
-            </h2>
-            <div class="key-content">
-                <ul id="validKeys">
-                {% for key, fail_count in valid_keys.items() %}
-                    <li>
-                        <div class="key-info">
-                            <span class="status-badge status-valid">
-                                <i class="fas fa-check"></i> 有效
-                            </span>
-                            <span class="key-text" data-full-key="{{ key }}">{{ key[:4] + '...' + key[-4:] }}</span>
-                            <button class="toggle-vis-btn" onclick="toggleKeyVisibility(this)">
-                                <i class="fas fa-eye"></i>
-                            </button>
-                            <span class="fail-count">
-                                <i class="fas fa-exclamation-triangle"></i>
-                                失败: {{ fail_count }}
-                            </span>
+{% extends "base.html" %}
+
+{% block title %}API密钥状态 - Gemini Balance{% endblock %}
+
+{% block head_extra_styles %}
+<style>
+    /* keys_status.html specific styles */
+    .key-content {
+        transition: max-height 0.3s ease-in-out, opacity 0.3s ease-in-out;
+    }
+    .key-content.collapsed {
+        max-height: 0;
+        overflow: hidden;
+        opacity: 0;
+    }
+    .toggle-icon {
+        transition: transform 0.3s ease;
+    }
+    .toggle-icon.collapsed {
+        transform: rotate(-90deg);
+    }
+    /* Copy status styling is handled by base.html's notification */
+</style>
+{% endblock %}
+
+{% block head_extra_scripts %}
+    <!-- keys_status.js needs to be loaded in head because it might be used by inline scripts -->
+    <script src="/static/js/keys_status.js"></script>
+{% endblock %}
+
+{% block content %}
+    <div class="container max-w-4xl mx-auto px-4">
+        <div class="glass-card rounded-2xl shadow-xl p-6 md:p-8">
+            <button class="absolute top-6 right-6 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-full w-8 h-8 flex items-center justify-center text-primary-600 transition-all duration-300" onclick="refreshPage(this)">
+                <i class="fas fa-sync-alt"></i>
+            </button>
+            
+            <h1 class="text-3xl font-extrabold text-center text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-primary-700 mb-4">
+                 <img src="/static/icons/logo.png" alt="Gemini Balance Logo" class="h-9 inline-block align-middle mr-2">
+                 Gemini Balance
+            </h1>
+            
+            <!-- Navigation Tabs -->
+            <div class="flex justify-center mb-8 overflow-x-auto pb-2 gap-2">
+                <a href="/config" class="whitespace-nowrap flex items-center justify-center gap-2 px-6 py-3 font-medium rounded-lg bg-white bg-opacity-50 hover:bg-opacity-70 text-gray-700 transition-all duration-200">
+                    <i class="fas fa-cog"></i> 配置编辑
+                </a>
+                <a href="/keys" class="whitespace-nowrap flex items-center justify-center gap-2 px-6 py-3 font-medium rounded-lg bg-primary-600 text-white shadow-md">
+                    <i class="fas fa-key"></i> 密钥状态
+                </a>
+                <a href="/logs" class="whitespace-nowrap flex items-center justify-center gap-2 px-6 py-3 font-medium rounded-lg bg-white bg-opacity-50 hover:bg-opacity-70 text-gray-700 transition-all duration-200">
+                    <i class="fas fa-exclamation-triangle"></i> 错误日志
+                </a>
+            </div>
+            
+            <!-- 有效密钥区域 -->
+            <div class="bg-white bg-opacity-70 rounded-xl shadow-md overflow-hidden mb-6 animate-fade-in">
+                <div class="flex justify-between items-center p-4 bg-white bg-opacity-80 cursor-pointer" onclick="toggleSection(this, 'validKeys')">
+                    <div class="flex items-center gap-3">
+                        <i class="fas fa-chevron-down toggle-icon text-primary-600"></i>
+                        <i class="fas fa-check-circle text-success-500 text-xl"></i>
+                        <h2 class="text-lg font-semibold">有效密钥</h2>
+                        <div class="flex items-center gap-2 ml-4">
+                            <label for="failCountThreshold" class="text-sm text-gray-600 select-none">失败次数≥</label>
+                            <input type="number" id="failCountThreshold" value="0" min="0" class="form-input h-7 w-16 px-2 py-1 text-sm border-gray-300 rounded focus:ring-primary-500 focus:border-primary-500">
                         </div>
-                        <div class="key-actions">
-                            <button class="verify-btn" onclick="verifyKey('{{ key }}', this)">
-                                <i class="fas fa-check-circle"></i>
-                                验证
-                            </button>
-                            <button class="copy-btn" onclick="copyKey('{{ key }}')">
-                                <i class="fas fa-copy"></i>
-                                复制
-                            </button>
-                        </div>
-                    </li>
-                {% endfor %}
-                </ul>
+                    </div>
+                    <div class="flex gap-2">
+                        <button class="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200" onclick="event.stopPropagation(); resetAllKeysFailCount('valid', event)" data-reset-type="valid">
+                            <i class="fas fa-redo-alt"></i>
+                            批量重置
+                        </button>
+                        <button class="flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200" onclick="event.stopPropagation(); copyKeys('valid')">
+                            <i class="fas fa-copy"></i>
+                            批量复制
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="key-content p-4 bg-white bg-opacity-40">
+                    <ul id="validKeys" class="space-y-3">
+                    {% for key, fail_count in valid_keys.items() %}
+                        <li class="bg-white rounded-lg p-3 shadow-sm hover:shadow-md transition-shadow duration-200 border border-gray-100" data-fail-count="{{ fail_count }}">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-success-50 text-success-600">
+                                        <i class="fas fa-check mr-1"></i> 有效
+                                    </span>
+                                    <div class="flex items-center gap-1">
+                                        <span class="key-text font-mono text-gray-700" data-full-key="{{ key }}">{{ key[:4] + '...' + key[-4:] }}</span>
+                                        <button class="text-gray-500 hover:text-primary-600 transition-colors" onclick="toggleKeyVisibility(this)">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-600">
+                                        <i class="fas fa-exclamation-triangle mr-1"></i>
+                                        失败: {{ fail_count }}
+                                    </span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <button class="flex items-center gap-1 bg-success-500 hover:bg-success-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200" onclick="verifyKey('{{ key }}', this)">
+                                        <i class="fas fa-check-circle"></i>
+                                        验证
+                                    </button>
+                                    <button class="flex items-center gap-1 bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200" onclick="resetKeyFailCount('{{ key }}', this)">
+                                        <i class="fas fa-redo-alt"></i>
+                                        重置
+                                    </button>
+                                    <button class="flex items-center gap-1 bg-gray-500 hover:bg-gray-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200" onclick="copyKey('{{ key }}')">
+                                        <i class="fas fa-copy"></i>
+                                        复制
+                                    </button>
+                                </div>
+                            </div>
+                        </li>
+                    {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- 无效密钥区域 -->
+            <div class="bg-white bg-opacity-70 rounded-xl shadow-md overflow-hidden mb-6 animate-fade-in" style="animation-delay: 0.2s">
+                <div class="flex justify-between items-center p-4 bg-white bg-opacity-80 cursor-pointer" onclick="toggleSection(this, 'invalidKeys')">
+                    <div class="flex items-center gap-3">
+                        <i class="fas fa-chevron-down toggle-icon text-primary-600"></i>
+                        <i class="fas fa-times-circle text-danger-500 text-xl"></i>
+                        <h2 class="text-lg font-semibold">无效密钥</h2>
+                    </div>
+                    <div class="flex gap-2">
+                        <button class="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200" onclick="event.stopPropagation(); resetAllKeysFailCount('invalid', event)" data-reset-type="invalid">
+                            <i class="fas fa-redo-alt"></i>
+                            批量重置
+                        </button>
+                        <button class="flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200" onclick="event.stopPropagation(); copyKeys('invalid')">
+                            <i class="fas fa-copy"></i>
+                            批量复制
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="key-content p-4 bg-white bg-opacity-40">
+                    <ul id="invalidKeys" class="space-y-3">
+                    {% for key, fail_count in invalid_keys.items() %}
+                        <li class="bg-white rounded-lg p-3 shadow-sm hover:shadow-md transition-shadow duration-200 border border-gray-100">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-danger-50 text-danger-600">
+                                        <i class="fas fa-times mr-1"></i> 无效
+                                    </span>
+                                    <div class="flex items-center gap-1">
+                                        <span class="key-text font-mono text-gray-700" data-full-key="{{ key }}">{{ key[:4] + '...' + key[-4:] }}</span>
+                                        <button class="text-gray-500 hover:text-primary-600 transition-colors" onclick="toggleKeyVisibility(this)">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-600">
+                                        <i class="fas fa-exclamation-triangle mr-1"></i>
+                                        失败: {{ fail_count }}
+                                    </span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <button class="flex items-center gap-1 bg-success-500 hover:bg-success-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200" onclick="verifyKey('{{ key }}', this)">
+                                        <i class="fas fa-check-circle"></i>
+                                        验证
+                                    </button>
+                                    <button class="flex items-center gap-1 bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200" onclick="resetKeyFailCount('{{ key }}', this)">
+                                        <i class="fas fa-redo-alt"></i>
+                                        重置
+                                    </button>
+                                    <button class="flex items-center gap-1 bg-gray-500 hover:bg-gray-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200" onclick="copyKey('{{ key }}')">
+                                        <i class="fas fa-copy"></i>
+                                        复制
+                                    </button>
+                                </div>
+                            </div>
+                        </li>
+                    {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- 总密钥数显示 -->
+            <div class="bg-white bg-opacity-70 rounded-xl shadow-md p-4 text-center animate-fade-in" style="animation-delay: 0.4s">
+                <div class="flex items-center justify-center gap-2 text-primary-700 font-semibold text-lg">
+                    <i class="fas fa-key"></i> 总密钥数：{{ total }}
+                </div>
             </div>
         </div>
-        <div class="key-list">
-            <h2 onclick="toggleSection(this, 'invalidKeys')">
-                <span>
-                    <i class="fas fa-chevron-down toggle-icon"></i>
-                    <i class="fas fa-times-circle" style="color: #e74c3c;"></i>
-                    无效密钥
-                </span>
-                <button class="copy-btn" onclick="event.stopPropagation(); copyKeys('invalid')">
-                    <i class="fas fa-copy"></i>
-                    批量复制
-                </button>
-            </h2>
-            <div class="key-content">
-                <ul id="invalidKeys">
-                {% for key, fail_count in invalid_keys.items() %}
-                    <li>
-                        <div class="key-info">
-                            <span class="status-badge status-invalid">
-                                <i class="fas fa-times"></i> 无效
-                            </span>
-                            <span class="key-text" data-full-key="{{ key }}">{{ key[:4] + '...' + key[-4:] }}</span>
-                            <button class="toggle-vis-btn" onclick="toggleKeyVisibility(this)">
-                                <i class="fas fa-eye"></i>
-                            </button>
-                            <span class="fail-count">
-                                <i class="fas fa-exclamation-triangle"></i>
-                                失败: {{ fail_count }}
-                            </span>
-                        </div>
-                        <div class="key-actions">
-                            <button class="verify-btn" onclick="verifyKey('{{ key }}', this)">
-                                <i class="fas fa-check-circle"></i>
-                                验证
-                            </button>
-                            <button class="copy-btn" onclick="copyKey('{{ key }}')">
-                                <i class="fas fa-copy"></i>
-                                复制
-                            </button>
-                        </div>
-                    </li>
-                {% endfor %}
-                </ul>
-            </div>
-        </div>
-        <div class="total">
-            <i class="fas fa-key"></i> 总密钥数：{{ total }}
-        </div>
-    </div>
-
-    <div class="scroll-buttons">
-        <button class="scroll-btn" onclick="scrollToTop()" title="回到顶部">
-            <i class="fas fa-chevron-up"></i>
-        </button>
-        <button class="scroll-btn" onclick="scrollToBottom()" title="滚动到底部">
-            <i class="fas fa-chevron-down"></i>
-        </button>
-    </div>
-
-    <div id="copyStatus"></div>
-
-    <div class="copyright">
-        © <script>document.write(new Date().getFullYear())</script> by <a href="https://linux.do/u/snaily" target="_blank"><img src="https://linux.do/user_avatar/linux.do/snaily/288/306510_2.gif" alt="snaily">snaily</a> | 
-        <a href="https://github.com/snailyp/gemini-balance" target="_blank"><i class="fab fa-github"></i> GitHub</a>
     </div>
     
-    <script src="/static/js/keys_status.js"></script>
-</body>
-</html>
+    <!-- Scroll buttons are now in base.html -->
+    <div class="scroll-buttons">
+         <button class="scroll-button" onclick="scrollToTop()" title="回到顶部">
+             <i class="fas fa-chevron-up"></i>
+         </button>
+         <button class="scroll-button" onclick="scrollToBottom()" title="滚动到底部">
+             <i class="fas fa-chevron-down"></i>
+         </button>
+     </div>
+    
+    <!-- Notification component is now in base.html (use id="notification") -->
+    <div id="notification" class="notification"></div>
+    <!-- 重置确认模态框 -->
+    <div id="resetModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg p-6 shadow-xl max-w-md w-full animate-fade-in">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-800" id="resetModalTitle">批量重置失败次数</h3>
+                <button onclick="closeResetModal()" class="text-gray-500 hover:text-gray-700 focus:outline-none">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="mb-6">
+                <p class="text-gray-600" id="resetModalMessage"></p>
+            </div>
+            <div class="flex justify-end gap-3">
+                <button onclick="closeResetModal()" class="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-lg transition-colors">
+                    取消
+                </button>
+                <button id="confirmResetBtn" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors">
+                    确认
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 操作结果模态框 -->
+    <div id="resultModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg p-6 shadow-xl max-w-md w-full animate-fade-in">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-800" id="resultModalTitle">操作结果</h3>
+                <button onclick="closeResultModal()" class="text-gray-500 hover:text-gray-700 focus:outline-none">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="mb-6 text-center">
+                <div id="resultIcon" class="text-5xl mb-3"></div>
+                <p class="text-gray-600" id="resultModalMessage"></p>
+            </div>
+            <div class="flex justify-center">
+                <button id="resultModalConfirmBtn" onclick="closeResultModal()" class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors">
+                    确定
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Footer is now in base.html -->
+    
+{% endblock %}
+
+{% block body_scripts %}
+    <script>
+        // keys_status.html specific JavaScript initialization
+        document.addEventListener('DOMContentLoaded', () => {
+            // Filter functionality based on fail count threshold
+            const thresholdInput = document.getElementById('failCountThreshold');
+            const validKeysList = document.getElementById('validKeys');
+
+            function filterValidKeys() {
+                const threshold = parseInt(thresholdInput.value, 10);
+                if (isNaN(threshold)) return; // Do nothing if input is not a number
+
+                const keys = validKeysList.querySelectorAll('li');
+                keys.forEach(keyItem => {
+                    const failCount = parseInt(keyItem.getAttribute('data-fail-count'), 10);
+                    if (failCount >= threshold) {
+                        keyItem.style.display = ''; // Show item
+                    } else {
+                        keyItem.style.display = 'none'; // Hide item
+                    }
+                });
+            }
+
+            if (thresholdInput && validKeysList) {
+                 thresholdInput.addEventListener('input', filterValidKeys);
+                 // Initial filter on load
+                 filterValidKeys();
+            }
+
+            // Initialize other elements or event listeners if needed
+            // The main logic (verifyKey, resetKeyFailCount, copyKey, etc.) is in keys_status.js
+            // The toggleSection logic is now specific to this page
+             window.toggleSection = function(header, sectionId) {
+                 const toggleIcon = header.querySelector('.toggle-icon');
+                 const content = header.nextElementSibling; // Assumes content is immediately after header
+                 if (toggleIcon && content) {
+                     toggleIcon.classList.toggle('collapsed');
+                     content.classList.toggle('collapsed');
+                 }
+             }
+        });
+    </script>
+{% endblock %}

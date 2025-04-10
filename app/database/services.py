@@ -1,10 +1,9 @@
 """
 数据库服务模块
 """
-import datetime
 import json
 from typing import Dict, List, Optional, Any, Union
-from datetime import date, timedelta # Import date and timedelta
+from datetime import datetime
 
 from sqlalchemy import select, insert, update, func # Import func for COUNT
 
@@ -142,7 +141,7 @@ async def add_error_log(
                 model_name=model_name,
                 error_code=error_code,
                 request_msg=request_msg_json,
-                request_time=datetime.datetime.now()
+                request_time=datetime.now()
             )
         )
         await database.execute(query)
@@ -158,8 +157,8 @@ async def get_error_logs(
     offset: int = 0,
     key_search: Optional[str] = None,
     error_search: Optional[str] = None,
-    start_date: Optional[date] = None,
-    end_date: Optional[date] = None
+    start_date: Optional[datetime] = None,
+    end_date: Optional[datetime] = None
 ) -> List[Dict[str, Any]]:
     """
     获取错误日志，支持搜索和日期过滤
@@ -169,8 +168,8 @@ async def get_error_logs(
         offset (int): 偏移量
         key_search (Optional[str]): Gemini密钥搜索词 (模糊匹配)
         error_search (Optional[str]): 错误类型或日志内容搜索词 (模糊匹配)
-        start_date (Optional[date]): 开始日期
-        end_date (Optional[date]): 结束日期
+        start_date (Optional[datetime]): 开始日期时间
+        end_date (Optional[datetime]): 结束日期时间
 
     Returns:
         List[Dict[str, Any]]: 错误日志列表
@@ -189,8 +188,8 @@ async def get_error_logs(
         if start_date:
             query = query.where(ErrorLog.request_time >= start_date)
         if end_date:
-            # Add 1 day to end_date to include the whole day
-            query = query.where(ErrorLog.request_time < end_date + timedelta(days=1))
+            # Use the datetime object directly for comparison
+            query = query.where(ErrorLog.request_time < end_date)
 
         # Apply ordering, limit, and offset
         query = query.order_by(ErrorLog.request_time.desc()).limit(limit).offset(offset)
@@ -205,8 +204,8 @@ async def get_error_logs(
 async def get_error_logs_count(
     key_search: Optional[str] = None,
     error_search: Optional[str] = None,
-    start_date: Optional[date] = None,
-    end_date: Optional[date] = None
+    start_date: Optional[datetime] = None,
+    end_date: Optional[datetime] = None
 ) -> int:
     """
     获取符合条件的错误日志总数
@@ -214,8 +213,8 @@ async def get_error_logs_count(
     Args:
         key_search (Optional[str]): Gemini密钥搜索词 (模糊匹配)
         error_search (Optional[str]): 错误类型或日志内容搜索词 (模糊匹配)
-        start_date (Optional[date]): 开始日期
-        end_date (Optional[date]): 结束日期
+        start_date (Optional[datetime]): 开始日期时间
+        end_date (Optional[datetime]): 结束日期时间
 
     Returns:
         int: 日志总数
@@ -234,7 +233,8 @@ async def get_error_logs_count(
         if start_date:
             query = query.where(ErrorLog.request_time >= start_date)
         if end_date:
-            query = query.where(ErrorLog.request_time < end_date + timedelta(days=1))
+            # Use the datetime object directly for comparison
+            query = query.where(ErrorLog.request_time < end_date)
 
         count_result = await database.fetch_one(query)
         return count_result[0] if count_result else 0

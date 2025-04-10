@@ -2,7 +2,7 @@
 日志路由模块
 """
 from typing import Any, Dict, List, Optional
-from datetime import date
+from datetime import datetime
 from pydantic import BaseModel
 from fastapi import APIRouter, HTTPException, Request, Query
 from fastapi.responses import RedirectResponse
@@ -29,8 +29,8 @@ async def get_error_logs_api(
     offset: int = Query(0, ge=0),
     key_search: Optional[str] = Query(None, description="Search term for Gemini key (partial match)"),
     error_search: Optional[str] = Query(None, description="Search term for error type or log message"),
-    start_date: Optional[date] = Query(None, description="Start date for filtering (YYYY-MM-DD)"),
-    end_date: Optional[date] = Query(None, description="End date for filtering (YYYY-MM-DD)")
+    start_date: Optional[datetime] = Query(None, description="Start datetime for filtering (YYYY-MM-DDTHH:MM)"),
+    end_date: Optional[datetime] = Query(None, description="End datetime for filtering (YYYY-MM-DDTHH:MM)")
 ):
     """
     获取错误日志

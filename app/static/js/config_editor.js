@@ -310,9 +310,13 @@ function switchTab(tabId) {
     const tabButtons = document.querySelectorAll('.tab-btn');
     tabButtons.forEach(button => {
         if (button.getAttribute('data-tab') === tabId) {
-            button.classList.add('active');
+            // 激活状态：主色背景，白色文字，添加阴影
+            button.classList.remove('bg-white', 'bg-opacity-50', 'text-gray-700', 'hover:bg-opacity-70');
+            button.classList.add('bg-primary-600', 'text-white', 'shadow-md');
         } else {
-            button.classList.remove('active');
+            // 非激活状态：白色背景，灰色文字，无阴影
+            button.classList.remove('bg-primary-600', 'text-white', 'shadow-md');
+            button.classList.add('bg-white', 'bg-opacity-50', 'text-gray-700', 'hover:bg-opacity-70');
         }
     });
     
@@ -354,18 +358,19 @@ function addArrayItemWithValue(key, value) {
     if (!container) return;
     
     const arrayItem = document.createElement('div');
-    arrayItem.className = 'array-item';
+    arrayItem.className = 'array-item flex justify-between items-center mb-2'; // 使用 Flexbox 布局，垂直居中，底部增加间距
     
     const input = document.createElement('input');
     input.type = 'text';
     input.name = `${key}[]`;
     input.value = value;
-    input.className = 'array-input';
+    input.className = 'array-input flex-grow px-3 py-2 rounded-md border border-gray-300 focus:border-primary-500 focus:ring focus:ring-primary-200 focus:ring-opacity-50 mr-2'; // 输入框占据大部分空间，添加样式和右边距
     
     const removeBtn = document.createElement('button');
     removeBtn.type = 'button';
-    removeBtn.className = 'remove-btn';
-    removeBtn.innerHTML = '<i class="fas fa-times"></i>';
+    removeBtn.className = 'remove-btn text-gray-400 hover:text-red-500 focus:outline-none transition-colors duration-150 ml-2'; // 新的 Tailwind 样式
+    removeBtn.innerHTML = '<i class="fas fa-trash-alt"></i>'; // 改用垃圾桶图标
+    removeBtn.title = '删除'; // 添加悬停提示
     removeBtn.addEventListener('click', function() {
         arrayItem.remove();
     });
@@ -411,12 +416,43 @@ function collectFormData() {
     return formData;
 }
 
+// 辅助函数：停止定时任务
+async function stopScheduler() {
+    try {
+        const response = await fetch('/api/scheduler/stop', { method: 'POST' });
+        if (!response.ok) {
+            console.warn(`停止定时任务失败: ${response.status}`);
+        } else {
+            console.log('定时任务已停止');
+        }
+    } catch (error) {
+        console.error('调用停止定时任务API时出错:', error);
+    }
+}
+
+// 辅助函数：启动定时任务
+async function startScheduler() {
+    try {
+        const response = await fetch('/api/scheduler/start', { method: 'POST' });
+        if (!response.ok) {
+            console.warn(`启动定时任务失败: ${response.status}`);
+        } else {
+            console.log('定时任务已启动');
+        }
+    } catch (error) {
+        console.error('调用启动定时任务API时出错:', error);
+    }
+}
+
 // 保存配置
 async function saveConfig() {
     try {
         const formData = collectFormData();
-        
+
         showNotification('正在保存配置...', 'info');
+
+        // 1. 停止定时任务
+        await stopScheduler();
         
         const response = await fetch('/api/config', {
             method: 'PUT',
@@ -435,24 +471,37 @@ async function saveConfig() {
         
         // 显示保存状态
         const saveStatus = document.getElementById('saveStatus');
-        saveStatus.classList.add('show');
+        saveStatus.style.opacity = "1";
+        saveStatus.style.transform = "translate(-50%, -50%) scale(1.1)";
         
         setTimeout(() => {
-            saveStatus.classList.remove('show');
+            saveStatus.style.opacity = "0";
+            saveStatus.style.transform = "translate(-50%, -50%) scale(0.95)";
         }, 3000);
         
         showNotification('配置保存成功', 'success');
+
+        // 3. 启动新的定时任务
+        await startScheduler();
+
     } catch (error) {
         console.error('保存配置失败:', error);
-        
+        // 保存失败时，也尝试重启定时任务，以防万一
+        await startScheduler();
         // 显示错误状态
         const saveStatus = document.getElementById('saveStatus');
-        saveStatus.classList.add('show', 'error');
+        saveStatus.style.backgroundColor = "#ef4444"; // 红色背景
+        saveStatus.style.opacity = "1";
+        saveStatus.style.transform = "translate(-50%, -50%) scale(1.1)";
         saveStatus.querySelector('.status-icon i').className = 'fas fa-times-circle';
         saveStatus.querySelector('.status-text').textContent = '配置保存失败';
         
         setTimeout(() => {
-            saveStatus.classList.remove('show', 'error');
+            saveStatus.style.opacity = "0";
+            saveStatus.style.transform = "translate(-50%, -50%) scale(0.95)";
+            setTimeout(() => {
+                saveStatus.style.backgroundColor = "#22c55e"; // 恢复绿色背景
+            }, 300);
         }, 3000);
         
         showNotification('保存配置失败: ' + error.message, 'error');
@@ -491,6 +540,9 @@ function resetConfig(event) {
 async function executeReset() {
     try {
         showNotification('正在重置配置...', 'info');
+
+        // 1. 停止定时任务
+        await stopScheduler();
         const response = await fetch('/api/config/reset', { method: 'POST' });
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
@@ -498,24 +550,48 @@ async function executeReset() {
         const config = await response.json();
         populateForm(config);
         showNotification('配置已重置为默认值', 'success');
+
+        // 3. 启动新的定时任务
+        await startScheduler();
+
     } catch (error) {
         console.error('重置配置失败:', error);
         showNotification('重置配置失败: ' + error.message, 'error');
+        // 重置失败时，也尝试重启定时任务
+        await startScheduler();
     }
 }
-
 // 显示通知
 function showNotification(message, type = 'info') {
     const notification = document.getElementById('notification');
     notification.textContent = message;
-    notification.className = 'notification show';
     
-    if (type) {
-        notification.classList.add(type);
+    // 设置适当的样式
+    if (type === 'error') {
+        notification.classList.add('bg-danger-500');
+        notification.classList.remove('bg-black');
+    } else {
+        notification.classList.remove('bg-danger-500');
+        notification.classList.add('bg-black');
+        
+        // 可以为不同类型设置不同的颜色
+        if (type === 'success') {
+            notification.style.backgroundColor = '#22c55e'; // 绿色
+        } else if (type === 'info') {
+            notification.style.backgroundColor = '#3b82f6'; // 蓝色
+        } else if (type === 'warning') {
+            notification.style.backgroundColor = '#f59e0b'; // 橙色
+        }
     }
     
+    // 应用过渡效果 - 与keys_status.js中一致
+    notification.style.opacity = "1";
+    notification.style.transform = "translate(-50%, 0)";
+    
+    // 设置自动消失
     setTimeout(() => {
-        notification.classList.remove('show');
+        notification.style.opacity = "0";
+        notification.style.transform = "translate(-50%, 10px)";
     }, 3000);
 }
 
@@ -527,8 +603,7 @@ function refreshPage(button) {
 
 // 滚动到顶部
 function scrollToTop() {
-    const container = document.querySelector('.container');
-    container.scrollTo({
+    window.scrollTo({
         top: 0,
         behavior: 'smooth'
     });
@@ -536,9 +611,8 @@ function scrollToTop() {
 
 // 滚动到底部
 function scrollToBottom() {
-    const container = document.querySelector('.container');
-    container.scrollTo({
-        top: container.scrollHeight,
+    window.scrollTo({
+        top: document.body.scrollHeight,
         behavior: 'smooth'
     });
 }

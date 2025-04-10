@@ -14,6 +14,7 @@ from app.service.key.key_manager import get_key_manager_instance
 from app.core.initialization import initialize_app
 from app.database.connection import connect_to_db, disconnect_from_db
 from app.database.initialization import initialize_database
+from app.scheduler.key_checker import start_scheduler, stop_scheduler # 导入调度器函数
 
 logger = get_application_logger()
 
@@ -44,12 +45,20 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error(f"Failed to initialize application: {str(e)}")
         raise
-    
+
+    # 启动调度器
+    start_scheduler()
+    logger.info("Scheduler started successfully.")
+
     yield  # 应用程序运行期间
     
     # 关闭事件
     logger.info("Application shutting down...")
     
+    # 停止调度器
+    stop_scheduler()
+    logger.info("Scheduler stopped.")
+
     # 断开数据库连接
     await disconnect_from_db()
 

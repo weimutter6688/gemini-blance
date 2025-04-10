@@ -1,165 +1,242 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>错误日志管理</title>
-    <link rel="manifest" href="/static/manifest.json">
-    <meta name="theme-color" content="#764ba2">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black">
-    <meta name="apple-mobile-web-app-title" content="GBalance">
-    <link rel="icon" href="/static/icons/icon-192x192.png">
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <!-- Use config_editor.css for base styles -->
-    <link rel="stylesheet" href="{{ url_for('static', path='/css/config_editor.css') }}">
-    <!-- Keep error_logs.css for specific styles -->
-    <link rel="stylesheet" href="{{ url_for('static', path='/css/error_logs.css') }}">
-</head>
-<body>
-    <div class="container">
-        <button class="refresh-btn" onclick="refreshPage(this)">
-            <i class="fas fa-sync-alt"></i>
-        </button>
-        <h1>Gemini Balance</h1>
-        <div class="nav-tabs">
-            <a href="/config" class="tab-link">
-                <i class="fas fa-cog"></i> 配置编辑
-            </a>
-            <a href="/keys" class="tab-link">
-                <i class="fas fa-key"></i> 密钥管理
-            </a>
-            <a href="/logs" class="tab-link active">
-                <i class="fas fa-exclamation-triangle"></i> 错误日志
-            </a>
-        </div>
+{% extends "base.html" %}
 
-        <div class="config-section active"> <!-- Use config-section for consistent layout -->
-            <h2><i class="fas fa-bug"></i> 错误日志列表</h2>
+{% block title %}错误日志管理 - Gemini Balance{% endblock %}
 
-            <div class="controls-container"> <!-- New container for controls -->
-                <div class="page-size-selector">
-                    <label for="pageSize">每页显示:</label>
-                    <select id="pageSize">
-                        <option value="10">10</option>
-                        <option value="20" selected>20</option>
-                        <option value="50">50</option>
-                        <option value="100">100</option>
-                    </select>
-                    <span>条</span>
+{% block head_extra_styles %}
+<style>
+    /* error_logs.html specific styles */
+    /* Table styles */
+    .styled-table th {
+        position: sticky;
+        top: 0;
+        background: #f3f4f6; /* bg-gray-100 */
+        z-index: 10;
+    }
+    .styled-table tbody tr:hover {
+        background-color: #f9fafb; /* bg-gray-50 */
+    }
+    .styled-table td {
+         padding: 12px 20px;
+         vertical-align: middle;
+         white-space: nowrap;
+         overflow: hidden;
+         text-overflow: ellipsis;
+         max-width: 250px;
+    }
+    /* Ensure error log column does not wrap and remove max-width */
+    .styled-table td:nth-child(4) { /* Assuming error log is the 4th column */
+        /* max-width: none; */
+        white-space: nowrap;
+    }
+    .btn-view-details {
+        background-color: #eef2ff; /* primary-50 */
+        color: #4f46e5; /* primary-600 */
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-weight: 500;
+        transition: all 0.2s ease-in-out;
+        border: 1px solid #c7d2fe; /* primary-200 */
+    }
+    .btn-view-details:hover {
+        background-color: #c7d2fe; /* primary-200 */
+        color: #4338ca; /* primary-700 */
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    @media (max-width: 768px) {
+        .search-container {
+            grid-template-columns: 1fr;
+        }
+    }
+    /* Modal styles are in base.html */
+</style>
+{% endblock %}
+
+{% block content %}
+    <div class="container mx-auto px-4"> <!-- Removed max-width-7xl for wider content -->
+        <div class="glass-card rounded-2xl shadow-xl p-6 md:p-8">
+            <!-- Removed refresh button from top right -->
+            
+            <h1 class="text-3xl font-extrabold text-center text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-primary-700 mb-4">
+                 <img src="/static/icons/logo.png" alt="Gemini Balance Logo" class="h-9 inline-block align-middle mr-2">
+                 Gemini Balance
+            </h1>
+            
+            <!-- Navigation Tabs -->
+            <div class="flex justify-center mb-8 overflow-x-auto pb-2 gap-2">
+                <a href="/config" class="whitespace-nowrap flex items-center justify-center gap-2 px-6 py-3 font-medium rounded-lg bg-white bg-opacity-50 hover:bg-opacity-70 text-gray-700 transition-all duration-200">
+                    <i class="fas fa-cog"></i> 配置编辑
+                </a>
+                <a href="/keys" class="whitespace-nowrap flex items-center justify-center gap-2 px-6 py-3 font-medium rounded-lg bg-white bg-opacity-50 hover:bg-opacity-70 text-gray-700 transition-all duration-200">
+                    <i class="fas fa-key"></i> 密钥状态
+                </a>
+                <a href="/logs" class="whitespace-nowrap flex items-center justify-center gap-2 px-6 py-3 font-medium rounded-lg bg-primary-600 text-white shadow-md">
+                    <i class="fas fa-exclamation-triangle"></i> 错误日志
+                </a>
+            </div>
+            
+            <!-- 主内容区域 -->
+            <div class="bg-white bg-opacity-70 rounded-xl p-6 shadow-lg animate-fade-in">
+                <h2 class="text-xl font-bold mb-6 pb-3 border-b border-gray-200 flex items-center gap-2">
+                    <i class="fas fa-bug text-primary-600"></i> 错误日志列表
+                </h2>
+                
+                <!-- 控制区域 (Refresh button removed, page size moved below) -->
+                <!-- Removed the original controls div -->
+                
+                <!-- 搜索控件 -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 mb-6">
+                    <input type="text" id="keySearch" placeholder="搜索密钥 (部分)" class="px-4 py-3 rounded-lg border border-gray-300 focus:border-primary-500 focus:ring focus:ring-primary-200 focus:ring-opacity-50 col-span-1 lg:col-span-1">
+                    <input type="text" id="errorSearch" placeholder="搜索错误类型/日志" class="px-4 py-3 rounded-lg border border-gray-300 focus:border-primary-500 focus:ring focus:ring-primary-200 focus:ring-opacity-50 col-span-1 lg:col-span-1">
+                    <div class="flex items-center gap-2 col-span-1 lg:col-span-2">
+                        <input type="datetime-local" id="startDate" class="px-4 py-3 rounded-lg border border-gray-300 focus:border-primary-500 focus:ring focus:ring-primary-200 focus:ring-opacity-50 flex-1 text-sm">
+                        <span class="text-gray-700">至</span>
+                        <input type="datetime-local" id="endDate" class="px-4 py-3 rounded-lg border border-gray-300 focus:border-primary-500 focus:ring focus:ring-primary-200 focus:ring-opacity-50 flex-1 text-sm">
+                    </div>
+                    <button id="searchBtn" class="flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 text-white px-4 py-3 rounded-lg font-medium transition-all duration-200 col-span-1">
+                        <i class="fas fa-search"></i> 搜索
+                    </button>
                 </div>
-                <button id="refreshBtn" class="action-btn"> <!-- Use a consistent button class -->
-                    <i class="fas fa-sync-alt"></i> 刷新
-                </button>
-            </div>
-
-            <!-- Search Controls -->
-            <div class="search-container">
-                <input type="text" id="keySearch" placeholder="搜索密钥 (部分)">
-                <input type="text" id="errorSearch" placeholder="搜索错误类型/日志"> <!-- Changed ID -->
-                <input type="date" id="startDate">
-                <span>至</span>
-                <input type="date" id="endDate">
-                <button id="searchBtn" class="action-btn">
-                    <i class="fas fa-search"></i> 搜索
-                </button>
-            </div>
-
-            <div class="table-container"> <!-- New container for table -->
-                <table class="styled-table"> <!-- Use a custom table class -->
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Gemini密钥</th>
-                            <th>错误类型</th>
-                            <th>错误日志</th>
-                            <th>模型名称</th>
-                            <th>请求时间</th>
-                            <th>操作</th>
-                        </tr>
-                    </thead>
-                    <tbody id="errorLogsTable">
-                        <!-- 错误日志数据将通过JavaScript动态加载 -->
-                    </tbody>
-                </table>
-            </div>
-
-            <div id="loadingIndicator" class="status-indicator loading"> <!-- Custom loading indicator -->
-                <div class="spinner"></div>
-                <p>加载中，请稍候...</p>
-            </div>
-
-            <div id="noDataMessage" class="status-indicator no-data"> <!-- Custom no-data message -->
-                <p>暂无错误日志数据</p>
-            </div>
-
-            <div id="errorMessage" class="status-indicator error"> <!-- Custom error message -->
-                <p>加载错误日志失败，请稍后重试。</p>
-            </div>
-
-            <div class="pagination-container"> <!-- Custom pagination container -->
-                <ul class="pagination" id="pagination">
-                    <!-- 分页控件将通过JavaScript动态加载 -->
-                </ul>
+                
+                <!-- 表格容器 - Enhanced Styling -->
+                <div class="overflow-x-auto rounded-lg border border-gray-200 mb-6 bg-white"> <!-- Removed shadow, added border -->
+                    <table class="styled-table w-full min-w-full text-sm"> <!-- Added text-sm -->
+                        <thead>
+                            <tr class="bg-primary-50 text-left text-primary-800"> <!-- Changed header background and text color -->
+                                <th class="px-5 py-3 font-semibold rounded-tl-lg">ID</th> <!-- Increased padding, adjusted rounding -->
+                                <th class="px-5 py-3 font-semibold">Gemini密钥</th>
+                                <th class="px-5 py-3 font-semibold">错误类型</th>
+                                <th class="px-5 py-3 font-semibold">错误日志</th>
+                                <th class="px-5 py-3 font-semibold">模型名称</th>
+                                <th class="px-5 py-3 font-semibold">请求时间</th>
+                                <th class="px-5 py-3 font-semibold rounded-tr-lg">操作</th> <!-- Adjusted rounding -->
+                            </tr>
+                        </thead>
+                        <tbody id="errorLogsTable" class="divide-y divide-gray-200">
+                            <!-- 错误日志数据将通过JavaScript动态加载 -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- 状态指示器 -->
+                <div id="loadingIndicator" class="flex items-center justify-center p-8 hidden">
+                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+                    <p class="ml-4 text-lg text-gray-700 font-medium">加载中，请稍候...</p>
+                </div>
+                
+                <div id="noDataMessage" class="text-center py-12 text-gray-500 hidden">
+                    <i class="fas fa-inbox text-5xl mb-3"></i>
+                    <p class="text-lg">暂无错误日志数据</p>
+                </div>
+                
+                <div id="errorMessage" class="bg-danger-50 text-danger-600 p-4 rounded-lg font-medium text-center hidden">
+                    <i class="fas fa-exclamation-circle mr-2"></i>
+                    加载错误日志失败，请稍后重试。
+                </div>
+                
+                <!-- 分页与每页显示控件 -->
+                <div class="flex flex-col sm:flex-row justify-between items-center mt-6 gap-4">
+                     <!-- 每页显示控件 (Moved here) -->
+                     <div class="flex items-center gap-2 text-sm text-gray-700">
+                        <label for="pageSize" class="font-medium">每页显示:</label>
+                        <select id="pageSize" class="rounded-md border border-gray-300 focus:ring focus:ring-primary-200 focus:border-primary-500 px-2 py-1 bg-white text-sm">
+                            <option value="10">10</option>
+                            <option value="20" selected>20</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                        <span>条</span>
+                    </div>
+                    <!-- 分页控件 -->
+                    <div class="flex items-center gap-4"> <!-- Wrapper for pagination and input -->
+                        <ul class="pagination flex items-center gap-1" id="pagination">
+                            <!-- 分页控件将通过JavaScript动态加载 -->
+                        </ul>
+                        <!-- 页码输入跳转 -->
+                        <div class="flex items-center gap-1">
+                            <input type="number" id="pageInput" min="1" class="w-16 px-2 py-1 rounded-md border border-gray-300 text-sm focus:ring focus:ring-primary-200 focus:border-primary-500" placeholder="页码">
+                            <button id="goToPageBtn" class="px-3 py-1 bg-primary-600 hover:bg-primary-700 text-white text-sm rounded-md transition">跳转</button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-
+    
+    <!-- Scroll buttons are now in base.html -->
     <div class="scroll-buttons">
-        <button class="scroll-btn" onclick="scrollToTop()" title="回到顶部">
-            <i class="fas fa-chevron-up"></i>
-        </button>
-        <button class="scroll-btn" onclick="scrollToBottom()" title="滚动到底部">
-            <i class="fas fa-chevron-down"></i>
-        </button>
-    </div>
-
-    <div id="copyStatus" class="notification"></div> <!-- Use notification class -->
-
-    <div class="copyright">
-        © <script>document.write(new Date().getFullYear())</script> by <a href="https://linux.do/u/snaily" target="_blank"><img src="https://linux.do/user_avatar/linux.do/snaily/288/306510_2.gif" alt="snaily">snaily</a> |
-        <a href="https://github.com/snailyp/gemini-balance" target="_blank"><i class="fab fa-github"></i> GitHub</a>
-    </div>
-
-    <!-- Custom Modal for Log Details -->
+         <button class="scroll-button" onclick="scrollToTop()" title="回到顶部">
+             <i class="fas fa-chevron-up"></i>
+         </button>
+         <button class="scroll-button" onclick="scrollToBottom()" title="滚动到底部">
+             <i class="fas fa-chevron-down"></i>
+         </button>
+     </div>
+    
+    <!-- Notification component is now in base.html (use id="notification") -->
+    <div id="notification" class="notification"></div>
+    <!-- Footer is now in base.html -->
+    
+    <!-- 日志详情模态框 -->
     <div id="logDetailModal" class="modal">
-        <div class="modal-content">
-            <span class="close-btn" id="closeLogDetailModalBtn">&times;</span>
-            <h2>错误日志详情</h2>
-            <div class="modal-body-content"> <!-- Added wrapper for consistent padding/styling -->
-                <div class="detail-item">
-                    <h6>Gemini密钥:</h6>
-                    <pre id="modalGeminiKey"></pre>
+        <div class="w-full max-w-6xl mx-auto bg-white rounded-2xl shadow-2xl overflow-hidden animate-fade-in"> <!-- Increased max-width to 6xl -->
+            <div class="p-6">
+                <div class="flex justify-between items-center border-b border-gray-200 pb-4 mb-4">
+                    <h2 class="text-xl font-bold text-gray-800">错误日志详情</h2>
+                    <button id="closeLogDetailModalBtn" class="text-gray-400 hover:text-gray-600 text-xl">&times;</button>
                 </div>
-                <div class="detail-item">
-                    <h6>错误类型:</h6>
-                    <p id="modalErrorType"></p>
+                
+                <div class="space-y-4 max-h-[60vh] overflow-y-auto p-1">
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <h6 class="text-sm font-semibold text-gray-600 mb-1">Gemini密钥:</h6>
+                        <pre id="modalGeminiKey" class="font-mono text-sm bg-gray-100 p-3 rounded overflow-x-auto"></pre>
+                    </div>
+                    
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <h6 class="text-sm font-semibold text-gray-600 mb-1">错误类型:</h6>
+                        <p id="modalErrorType" class="text-danger-600 font-medium"></p>
+                    </div>
+                    
+                    <div class="bg-gray-50 p-4 rounded-lg relative group"> <!-- Added relative and group -->
+                        <h6 class="text-sm font-semibold text-gray-600 mb-1">错误日志:</h6>
+                        <pre id="modalErrorLog" class="font-mono text-sm bg-gray-100 p-3 rounded overflow-x-auto whitespace-pre-wrap"></pre>
+                        <button class="copy-btn absolute top-2 right-2 bg-gray-200 hover:bg-gray-300 text-gray-600 p-1.5 rounded opacity-0 group-hover:opacity-100 transition-opacity" data-target="modalErrorLog" title="复制错误日志">
+                            <i class="far fa-copy"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="bg-gray-50 p-4 rounded-lg relative group"> <!-- Added relative and group -->
+                        <h6 class="text-sm font-semibold text-gray-600 mb-1">请求消息:</h6>
+                        <pre id="modalRequestMsg" class="font-mono text-sm bg-gray-100 p-3 rounded overflow-x-auto whitespace-pre-wrap"></pre>
+                         <button class="copy-btn absolute top-2 right-2 bg-gray-200 hover:bg-gray-300 text-gray-600 p-1.5 rounded opacity-0 group-hover:opacity-100 transition-opacity" data-target="modalRequestMsg" title="复制请求消息">
+                            <i class="far fa-copy"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <h6 class="text-sm font-semibold text-gray-600 mb-1">模型名称:</h6>
+                        <p id="modalModelName" class="font-medium"></p>
+                    </div>
+                    
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <h6 class="text-sm font-semibold text-gray-600 mb-1">请求时间:</h6>
+                        <p id="modalRequestTime" class="font-medium"></p>
+                    </div>
                 </div>
-                <div class="detail-item">
-                    <h6>错误日志:</h6>
-                    <pre id="modalErrorLog"></pre>
+                
+                <div class="flex justify-end mt-6">
+                    <button type="button" id="closeModalFooterBtn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-6 py-2 rounded-lg font-medium transition">关闭</button>
                 </div>
-                <div class="detail-item">
-                    <h6>请求消息:</h6>
-                    <pre id="modalRequestMsg"></pre>
-                </div>
-                <div class="detail-item">
-                    <h6>模型名称:</h6>
-                    <p id="modalModelName"></p>
-                </div>
-                <div class="detail-item">
-                    <h6>请求时间:</h6>
-                    <p id="modalRequestTime"></p>
-                </div>
-            </div>
-            <div class="modal-actions">
-                 <button type="button" id="closeModalFooterBtn" class="reset-btn">关闭</button> <!-- Use consistent button style -->
             </div>
         </div>
     </div>
+    
+{% endblock %}
 
-    <!-- Keep custom JS, remove Bootstrap JS -->
+{% block body_scripts %}
     <script src="{{ url_for('static', path='/js/error_logs.js') }}"></script>
-</body>
-</html>
+    <script>
+        // error_logs.html specific JS initialization (if any)
+        // e.g., initialize date pickers or other elements if needed
+        // The main logic is in error_logs.js
+    </script>
+{% endblock %}

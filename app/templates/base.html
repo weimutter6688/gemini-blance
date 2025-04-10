@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Gemini Balance{% endblock %}</title>
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="theme-color" content="#4F46E5">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="GBalance">
+    <link rel="icon" href="/static/icons/icon-192x192.png">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            200: '#c7d2fe',
+                            300: '#a5b4fc',
+                            400: '#818cf8',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            800: '#3730a3',
+                            900: '#312e81',
+                        },
+                        success: {
+                            50: '#ecfdf5',
+                            500: '#10b981',
+                            600: '#059669'
+                        },
+                        danger: {
+                            50: '#fef2f2',
+                            500: '#ef4444',
+                            600: '#dc2626'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-out',
+                        'slide-up': 'slideUp 0.5s ease-out',
+                        'slide-down': 'slideDown 0.5s ease-out',
+                        'shake': 'shake 0.5s ease-in-out',
+                        'spin': 'spin 1s linear infinite',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        slideUp: {
+                            '0%': { transform: 'translateY(20px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' },
+                        },
+                        slideDown: {
+                            '0%': { transform: 'translateY(-20px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' },
+                        },
+                        shake: {
+                            '0%, 100%': { transform: 'translateX(0)' },
+                            '25%': { transform: 'translateX(-5px)' },
+                            '75%': { transform: 'translateX(5px)' },
+                        },
+                         spin: {
+                            '0%': { transform: 'rotate(0deg)' },
+                            '100%': { transform: 'rotate(360deg)' },
+                        },
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        .glass-card {
+            background: rgba(255, 255, 255, 0.85); /* Slightly increased opacity for better readability */
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.18); /* Subtle border */
+        }
+        .bg-gradient {
+            background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 50%, #EC4899 100%);
+        }
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(243, 244, 246, 0.8); /* bg-gray-100 with opacity */
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(79, 70, 229, 0.4); /* primary-600 with opacity */
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(79, 70, 229, 0.6); /* primary-600 with more opacity */
+        }
+        /* Basic modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 50;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px);
+        }
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        /* Loading spinner */
+        .loading-spin {
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        /* Notification */
+        .notification {
+            position: fixed;
+            bottom: 5rem; /* Adjusted from bottom-20 */
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 0.75rem 1.25rem; /* px-5 py-3 */
+            border-radius: 0.5rem; /* rounded-lg */
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            font-weight: 500; /* font-medium */
+            z-index: 50;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+        }
+        .notification.show {
+            opacity: 1;
+            transform: translate(-50%, 0);
+        }
+        .notification.error {
+             background-color: rgba(220, 38, 38, 0.8); /* danger-600 with opacity */
+        }
+        /* Scroll buttons */
+        .scroll-buttons {
+            position: fixed;
+            right: 1.25rem; /* right-5 */
+            bottom: 5rem; /* bottom-20 */
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem; /* gap-2 */
+            z-index: 10;
+        }
+        .scroll-button {
+            width: 2.5rem; /* w-10 */
+            height: 2.5rem; /* h-10 */
+            background-color: #4f46e5; /* bg-primary-600 */
+            color: white;
+            border-radius: 9999px; /* rounded-full */
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* shadow-md */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease-in-out;
+        }
+        .scroll-button:hover {
+            background-color: #4338ca; /* hover:bg-primary-700 */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* hover:shadow-lg */
+        }
+        {% block head_extra_styles %}
+        {% endblock %}
+    </style>
+    {% block head_extra_scripts %}{% endblock %}
+</head>
+<body class="bg-gradient min-h-screen text-gray-800 pt-6 pb-16">
+
+    {% block content %}{% endblock %}
+
+    <!-- 底部版权 -->
+    <div class="fixed bottom-0 left-0 w-full py-3 bg-white bg-opacity-80 backdrop-blur-md text-center text-sm text-gray-600 border-t border-gray-200">
+        © <span id="copyright-year"></span> by
+        <a href="https://linux.do/u/snaily" target="_blank" class="text-primary-600 hover:text-primary-800 transition duration-300">
+            <img src="https://linux.do/user_avatar/linux.do/snaily/288/306510_2.gif" alt="snaily" class="inline-block w-5 h-5 rounded-full align-middle mr-1">snaily
+        </a> |
+        <a href="https://github.com/snailyp/gemini-balance" target="_blank" class="text-primary-600 hover:text-primary-800 transition duration-300">
+            <i class="fab fa-github"></i> GitHub
+        </a>
+    </div>
+
+    <!-- 通用JS -->
+    <script>
+        // 设置版权年份
+        document.getElementById('copyright-year').textContent = new Date().getFullYear();
+
+        // 滚动到顶部/底部函数 (如果页面需要)
+        function scrollToTop() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+        function scrollToBottom() {
+            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+        }
+
+        // 显示通知
+        function showNotification(message, type = 'success', duration = 3000) {
+            const notification = document.getElementById('notification') || createNotificationElement();
+            if (!notification) return;
+
+            notification.textContent = message;
+            notification.className = 'notification show'; // Reset classes
+            if (type === 'error') {
+                notification.classList.add('error');
+            }
+
+            // Clear previous timeout if exists
+            if (notification.timeoutId) {
+                clearTimeout(notification.timeoutId);
+            }
+
+            notification.timeoutId = setTimeout(() => {
+                notification.classList.remove('show');
+                // Optional: remove the element after fade out if dynamically created
+                // setTimeout(() => notification.remove(), 300);
+            }, duration);
+        }
+
+        // Helper to create notification element if it doesn't exist
+        function createNotificationElement() {
+            let notification = document.getElementById('notification');
+            if (!notification) {
+                notification = document.createElement('div');
+                notification.id = 'notification';
+                notification.className = 'notification';
+                document.body.appendChild(notification);
+            }
+            return notification;
+        }
+
+        // 页面刷新带加载状态
+        function refreshPage(button) {
+            if (button) {
+                const icon = button.querySelector('i');
+                if (icon) {
+                    icon.classList.add('loading-spin');
+                }
+            }
+            setTimeout(() => {
+                window.location.reload();
+            }, 300); // Short delay to show spinner
+        }
+
+    </script>
+    {% block body_scripts %}{% endblock %}
+</body>
+</html>

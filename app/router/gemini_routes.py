@@ -146,15 +146,67 @@ async def stream_generate_content(
         logger.error(f"Streaming request failed: {str(e)}")
         raise HTTPException(status_code=500, detail="Streaming request failed") from e
 
+@router.post("/reset-all-fail-counts")
+async def reset_all_key_fail_counts(key_type: str = None, key_manager: KeyManager = Depends(get_key_manager)):
+    """批量重置Gemini API密钥的失败计数，可选择性地仅重置有效或无效密钥"""
+    logger.info("-" * 50 + "reset_all_gemini_key_fail_counts" + "-" * 50)
+    logger.info(f"Received reset request with key_type: {key_type}")
+    
+    try:
+        # 获取分类后的密钥
+        keys_by_status = await key_manager.get_keys_by_status()
+        valid_keys = keys_by_status.get("valid_keys", {})
+        invalid_keys = keys_by_status.get("invalid_keys", {})
+        
+        # 根据类型选择要重置的密钥
+        keys_to_reset = []
+        if key_type == "valid":
+            keys_to_reset = list(valid_keys.keys())
+            logger.info(f"Resetting only valid keys, count: {len(keys_to_reset)}")
+        elif key_type == "invalid":
+            keys_to_reset = list(invalid_keys.keys())
+            logger.info(f"Resetting only invalid keys, count: {len(keys_to_reset)}")
+        else:
+            # 重置所有密钥
+            await key_manager.reset_failure_counts()
+            return JSONResponse({"success": True, "message": "所有密钥的失败计数已重置"})
+        
+        # 批量重置指定类型的密钥
+        for key in keys_to_reset:
+            await key_manager.reset_key_failure_count(key)
+        
+        return JSONResponse({
+            "success": True,
+            "message": f"{key_type}密钥的失败计数已重置",
+            "reset_count": len(keys_to_reset)
+        })
+    except Exception as e:
+        logger.error(f"Failed to reset key failure counts: {str(e)}")
+        return JSONResponse({"success": False, "message": f"批量重置失败: {str(e)}"}, status_code=500)
+
+
+@router.post("/reset-fail-count/{api_key}")
+async def reset_key_fail_count(api_key: str, key_manager: KeyManager = Depends(get_key_manager)):
+    """重置指定Gemini API密钥的失败计数"""
+    logger.info("-" * 50 + "reset_gemini_key_fail_count" + "-" * 50)
+    logger.info(f"Resetting failure count for API key: {api_key}")
+    
+    try:
+        result = await key_manager.reset_key_failure_count(api_key)
+        if result:
+            return JSONResponse({"success": True, "message": "失败计数已重置"})
+        return JSONResponse({"success": False, "message": "未找到指定密钥"}, status_code=404)
+    except Exception as e:
+        logger.error(f"Failed to reset key failure count: {str(e)}")
+        return JSONResponse({"success": False, "message": f"重置失败: {str(e)}"}, status_code=500)
 
 @router.post("/verify-key/{api_key}")
-async def verify_key(api_key: str, chat_service: GeminiChatService = Depends(get_chat_service)):
+async def verify_key(api_key: str, chat_service: GeminiChatService = Depends(get_chat_service), key_manager: KeyManager = Depends(get_key_manager)):
     """验证Gemini API密钥的有效性"""
     logger.info("-" * 50 + "verify_gemini_key" + "-" * 50)
     logger.info("Verifying API key validity")
     
     try:
-        
         # 使用generate_content接口测试key的有效性
         gemini_request = GeminiRequest(
             contents=[
@@ -167,13 +219,19 @@ async def verify_key(api_key: str, chat_service: GeminiChatService = Depends(get
         
         response = await chat_service.generate_content(
             settings.TEST_MODEL,
-            gemini_request, 
+            gemini_request,
             api_key
         )
         
         if response:
-            return JSONResponse({"status": "valid"})
-        return JSONResponse({"status": "invalid"})
+            return JSONResponse({"status": "valid"})        
     except Exception as e:
         logger.error(f"Key verification failed: {str(e)}")
+        
+        # 验证出现异常时增加失败计数
+        async with key_manager.failure_count_lock:
+            if api_key in key_manager.key_failure_counts:
+                key_manager.key_failure_counts[api_key] += 1
+                logger.warning(f"Verification exception for key: {api_key}, incrementing failure count")
+        
         return JSONResponse({"status": "invalid", "error": str(e)})

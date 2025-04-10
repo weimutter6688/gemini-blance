@@ -9,32 +9,12 @@ function scrollToBottom() {
     window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
 }
 
-// 刷新页面功能
-function refreshPage(button) {
-    if (button) {
-        // Use 'loading' class consistent with config_editor.css animation
-        button.classList.add('loading');
-        // Disable button while refreshing
-        button.disabled = true;
-    }
-
-    // Fetch new data instead of full reload for a smoother experience
-    loadErrorLogs().finally(() => {
-        if (button) {
-            // Remove loading class and re-enable button after fetch completes
-            button.classList.remove('loading');
-            button.disabled = false;
-        }
-    });
-    // Optional: Keep reload as fallback or if preferred
-    // setTimeout(() => {
-    //     window.location.reload();
-    // }, 500);
-}
+// Refresh function removed as the buttons are gone.
+// If refresh functionality is needed elsewhere, it can be triggered directly by calling loadErrorLogs().
 
 // 全局变量
 let currentPage = 1;
-let pageSize = 20;
+let pageSize = 10;
 // let totalPages = 1; // totalPages will be calculated dynamically based on API response if available, or based on fetched data length
 let errorLogs = []; // Store fetched logs for details view
 let currentSearch = { // Store current search parameters
@@ -46,7 +26,7 @@ let currentSearch = { // Store current search parameters
 
 // DOM Elements Cache
 let pageSizeSelector;
-let refreshBtn;
+// let refreshBtn; // Removed, as the button is deleted
 let tableBody;
 let paginationElement;
 let loadingIndicator;
@@ -59,12 +39,14 @@ let errorSearchInput;
 let startDateInput;
 let endDateInput;
 let searchBtn;
+let pageInput; // 新增：页码输入框
+let goToPageBtn; // 新增：跳转按钮
 
 // 页面加载完成后执行
 document.addEventListener('DOMContentLoaded', function() {
     // Cache DOM elements
     pageSizeSelector = document.getElementById('pageSize');
-    refreshBtn = document.getElementById('refreshBtn');
+    // refreshBtn = document.getElementById('refreshBtn'); // Removed
     tableBody = document.getElementById('errorLogsTable');
     paginationElement = document.getElementById('pagination');
     loadingIndicator = document.getElementById('loadingIndicator');
@@ -78,6 +60,8 @@ document.addEventListener('DOMContentLoaded', function() {
     startDateInput = document.getElementById('startDate');
     endDateInput = document.getElementById('endDate');
     searchBtn = document.getElementById('searchBtn');
+    pageInput = document.getElementById('pageInput'); // 新增
+    goToPageBtn = document.getElementById('goToPageBtn'); // 新增
 
     // Initialize page size selector
     if (pageSizeSelector) {
@@ -89,18 +73,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Initialize refresh button (using the one inside the controls container)
-    if (refreshBtn) {
-        refreshBtn.addEventListener('click', function() {
-            // Add loading state to the button itself
-            this.classList.add('loading');
-            this.disabled = true;
-            loadErrorLogs().finally(() => {
-                 this.classList.remove('loading');
-                 this.disabled = false;
-            });
-        });
-    }
+    // Refresh button event listener removed
 
     // Initialize search button
     if (searchBtn) {
@@ -130,7 +103,112 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Initial load of error logs
     loadErrorLogs();
+
+    // Add event listeners for copy buttons inside the modal
+    setupCopyButtons();
+
+    // 新增：为页码跳转按钮添加事件监听器
+    if (goToPageBtn && pageInput) {
+        goToPageBtn.addEventListener('click', function() {
+            const targetPage = parseInt(pageInput.value);
+            // 需要获取总页数来验证输入
+            // 暂时无法直接获取 totalPages，需要在 updatePagination 中存储或重新计算
+            // 简单的验证：必须是正整数
+            if (!isNaN(targetPage) && targetPage >= 1) {
+                // 理想情况下，应检查 targetPage <= totalPages
+                // 但 totalPages 可能未知，所以暂时只跳转
+                currentPage = targetPage;
+                loadErrorLogs();
+                pageInput.value = ''; // 清空输入框
+            } else {
+                showNotification('请输入有效的页码', 'error', 2000);
+                pageInput.value = ''; // 清空无效输入
+            }
+        });
+        // 允许按 Enter 键跳转
+        pageInput.addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                goToPageBtn.click(); // 触发按钮点击
+            }
+        });
+    }
 });
+
+// Fallback copy function using document.execCommand
+function fallbackCopyTextToClipboard(text) {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+
+    // Avoid scrolling to bottom
+    textArea.style.top = "0";
+    textArea.style.left = "0";
+    textArea.style.position = "fixed";
+
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+
+    let successful = false;
+    try {
+        successful = document.execCommand('copy');
+    } catch (err) {
+        console.error('Fallback copy failed:', err);
+        successful = false;
+    }
+
+    document.body.removeChild(textArea);
+    return successful;
+}
+
+// Helper function to handle feedback after copy attempt (both modern and fallback)
+function handleCopyResult(buttonElement, success) {
+     const originalIcon = buttonElement.querySelector('i').className; // Store original icon class
+     const iconElement = buttonElement.querySelector('i');
+     if (success) {
+        iconElement.className = 'fas fa-check text-success-500'; // Use checkmark icon class
+        showNotification('已复制到剪贴板', 'success', 2000);
+     } else {
+        iconElement.className = 'fas fa-times text-danger-500'; // Use error icon class
+        showNotification('复制失败', 'error', 3000);
+     }
+     setTimeout(() => { iconElement.className = originalIcon; }, success ? 2000 : 3000); // Restore original icon class
+}
+
+// Function to set up copy button listeners (using modern API with fallback)
+function setupCopyButtons() {
+    const copyButtons = document.querySelectorAll('.copy-btn');
+    copyButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const targetId = this.getAttribute('data-target');
+            const targetElement = document.getElementById(targetId);
+
+            if (targetElement) {
+                const textToCopy = targetElement.textContent;
+                let copySuccess = false;
+
+                // Try modern clipboard API first (requires HTTPS or localhost)
+                if (navigator.clipboard && window.isSecureContext) {
+                    navigator.clipboard.writeText(textToCopy).then(() => {
+                        handleCopyResult(this, true); // Use helper for feedback
+                    }).catch(err => {
+                        console.error('Clipboard API failed, attempting fallback:', err);
+                        // Attempt fallback if modern API fails
+                        copySuccess = fallbackCopyTextToClipboard(textToCopy);
+                        handleCopyResult(this, copySuccess); // Use helper for feedback
+                    });
+                } else {
+                    // Use fallback if modern API is not available or context is insecure
+                    console.warn("Clipboard API not available or context insecure. Using fallback copy method.");
+                    copySuccess = fallbackCopyTextToClipboard(textToCopy);
+                    handleCopyResult(this, copySuccess); // Use helper for feedback
+                }
+            } else {
+                console.error('Target element not found:', targetId);
+                showNotification('复制出错：找不到目标元素', 'error');
+            }
+        });
+    });
+}
 
 // 加载错误日志数据
 async function loadErrorLogs() {
@@ -389,10 +467,18 @@ function updatePagination(currentItemCount, totalItems) {
 // Helper function to add pagination links
 function addPaginationLink(parentElement, text, enabled, clickHandler, isActive = false) {
     const pageItem = document.createElement('li');
-    pageItem.className = `page-item ${!enabled ? 'disabled' : ''} ${isActive ? 'active' : ''}`;
+    // 移除 'page-item' 和 'active' 类，使用 Tailwind 类进行样式化
+    // pageItem.className = `page-item ${!enabled ? 'disabled' : ''} ${isActive ? 'active' : ''}`;
 
     const pageLink = document.createElement('a');
-    pageLink.className = 'page-link';
+    // 使用 Tailwind 类进行样式化
+    pageLink.className = `px-3 py-1 rounded-md text-sm transition duration-150 ease-in-out ${
+        isActive
+            ? 'bg-primary-600 text-white font-semibold shadow-md cursor-default' // 突出当前页样式
+            : enabled
+                ? 'bg-white text-gray-700 hover:bg-primary-50 hover:text-primary-600 border border-gray-300' // 可点击页码样式
+                : 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200' // 禁用状态样式 (如 '...')
+    }`;
     pageLink.href = '#'; // Prevent page jump
     pageLink.innerHTML = text;
 
@@ -402,12 +488,14 @@ function addPaginationLink(parentElement, text, enabled, clickHandler, isActive 
             clickHandler();
         });
     } else if (!enabled) {
-         pageLink.addEventListener('click', e => e.preventDefault()); // Prevent click on disabled
+         pageLink.addEventListener('click', e => e.preventDefault()); // Prevent click on disabled or active
+    } else if (isActive) {
+        pageLink.addEventListener('click', e => e.preventDefault()); // Prevent click on active page
     }
 
-
-    pageItem.appendChild(pageLink);
-    parentElement.appendChild(pageItem);
+    // 不再需要 li 元素，直接将 a 元素添加到父元素
+    // pageItem.appendChild(pageLink);
+    parentElement.appendChild(pageLink);
 }
 
 

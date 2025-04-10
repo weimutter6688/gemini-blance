@@ -15,3 +15,4 @@ sqlalchemy
 aiomysql
 databases
 python-dotenv
+apscheduler # 添加定时任务库

@@ -62,7 +62,11 @@ class Settings(BaseSettings):
     STREAM_SHORT_TEXT_THRESHOLD: int = DEFAULT_STREAM_SHORT_TEXT_THRESHOLD
     STREAM_LONG_TEXT_THRESHOLD: int = DEFAULT_STREAM_LONG_TEXT_THRESHOLD
     STREAM_CHUNK_SIZE: int = DEFAULT_STREAM_CHUNK_SIZE
-    
+
+    # 调度器配置
+    CHECK_INTERVAL_HOURS: int = 1 # 默认检查间隔为1小时
+    TIMEZONE: str = "Asia/Shanghai" # 默认时区
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         # 设置默认AUTH_TOKEN（如果未提供）

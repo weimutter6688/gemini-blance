@@ -37,6 +37,16 @@ class KeyManager:
         async with self.failure_count_lock:
             for key in self.key_failure_counts:
                 self.key_failure_counts[key] = 0
+                
+    async def reset_key_failure_count(self, key: str) -> bool:
+        """重置指定key的失败计数"""
+        async with self.failure_count_lock:
+            if key in self.key_failure_counts:
+                self.key_failure_counts[key] = 0
+                logger.info(f"Reset failure count for key: {key}")
+                return True
+            logger.warning(f"Attempt to reset failure count for non-existent key: {key}")
+            return False
 
     async def get_next_working_key(self) -> str:
         """获取下一可用的API key"""
