@@ -2,6 +2,7 @@ import asyncio
 from itertools import cycle
 from typing import Dict
 
+
 from app.config.config import settings
 from app.log.logger import get_key_manager_logger
 
@@ -109,6 +110,8 @@ async def get_key_manager_instance(api_keys: list = None) -> KeyManager:
             _singleton_instance = KeyManager(api_keys)
             logger.info("KeyManager instance created.")
         return _singleton_instance
+
+    
 async def reset_key_manager_instance():
     """重置 KeyManager 单例实例"""
     global _singleton_instance

@@ -7,7 +7,6 @@ from typing import List, Any, Dict, Type
 
 from pydantic import ValidationError
 from pydantic_settings import BaseSettings
-from dotenv import find_dotenv, load_dotenv
 from sqlalchemy import insert, update, select
 
 from app.core.constants import API_VERSION, DEFAULT_CREATE_IMAGE_MODEL, DEFAULT_FILTER_MODELS, DEFAULT_MODEL, DEFAULT_STREAM_CHUNK_SIZE, DEFAULT_STREAM_LONG_TEXT_THRESHOLD, DEFAULT_STREAM_MAX_DELAY, DEFAULT_STREAM_MIN_DELAY, DEFAULT_STREAM_SHORT_TEXT_THRESHOLD, DEFAULT_TIMEOUT
@@ -71,19 +70,6 @@ class Settings(BaseSettings):
 
 # 创建全局配置实例
 settings = Settings()
-
-# 添加重新加载配置的函数
-def reload_settings():
-    """重新加载环境变量并更新配置"""
-    global settings
-    # 显式加载 .env 文件，覆盖现有环境变量
-    # find_dotenv() 会查找 .env 文件
-    load_dotenv(find_dotenv(), override=True)
-    settings = Settings()
-    # 可以在这里添加日志记录，确认配置已重新加载
-    # print("Settings reloaded") # 用于调试
-
-# --- Initial Settings Synchronization ---
 
 def _parse_db_value(key: str, db_value: str, target_type: Type) -> Any:
     """尝试将数据库字符串值解析为目标 Python 类型"""
