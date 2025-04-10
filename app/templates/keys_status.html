@@ -51,7 +51,10 @@
                             <span class="status-badge status-valid">
                                 <i class="fas fa-check"></i> 有效
                             </span>
-                            <span class="key-text">{{ key }}</span>
+                            <span class="key-text" data-full-key="{{ key }}">{{ key[:4] + '...' + key[-4:] }}</span>
+                            <button class="toggle-vis-btn" onclick="toggleKeyVisibility(this)">
+                                <i class="fas fa-eye"></i>
+                            </button>
                             <span class="fail-count">
                                 <i class="fas fa-exclamation-triangle"></i>
                                 失败: {{ fail_count }}
@@ -92,7 +95,10 @@
                             <span class="status-badge status-invalid">
                                 <i class="fas fa-times"></i> 无效
                             </span>
-                            <span class="key-text">{{ key }}</span>
+                            <span class="key-text" data-full-key="{{ key }}">{{ key[:4] + '...' + key[-4:] }}</span>
+                            <button class="toggle-vis-btn" onclick="toggleKeyVisibility(this)">
+                                <i class="fas fa-eye"></i>
+                            </button>
                             <span class="fail-count">
                                 <i class="fas fa-exclamation-triangle"></i>
                                 失败: {{ fail_count }}

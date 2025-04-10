@@ -186,12 +186,16 @@ li:hover {
     display: flex;
     align-items: center;
     gap: 15px;
-    flex: 1;
+    flex: 1; /* Allow key-info to take up available space */
+    min-width: 0; /* Prevent flex item from overflowing */
 }
 
 .key-text {
     font-family: 'Roboto Mono', monospace;
     color: #2c3e50;
+    word-break: break-all; /* Ensure long keys wrap */
+    flex-shrink: 1; /* Allow key text to shrink if needed */
+    margin-right: 10px; /* Add space between key text and toggle button */
 }
 
 .fail-count {
@@ -443,6 +447,27 @@ li:hover {
     to { transform: rotate(360deg); }
 }
 
+/* Toggle Visibility Button Styles */
+.toggle-vis-btn {
+    background: none;
+    border: none;
+    color: #7f8c8d; /* Subtle color */
+    cursor: pointer;
+    padding: 5px;
+    font-size: 16px;
+    transition: color 0.3s ease;
+    margin-left: 5px; /* Space from key text */
+    flex-shrink: 0; /* Prevent button from shrinking */
+}
+
+.toggle-vis-btn:hover {
+    color: #34495e; /* Darker color on hover */
+}
+
+.toggle-vis-btn i {
+    vertical-align: middle;
+}
+
 @media (max-width: 768px) {
     .container {
         width: 100%;
@@ -478,6 +503,7 @@ li:hover {
         flex-direction: column;
         align-items: flex-start;
         gap: 8px;
+        width: 100%; /* Ensure key-info takes full width */
     }
     li {
         flex-direction: column;
@@ -493,7 +519,8 @@ li:hover {
         justify-content: center;
     }
     .key-text {
-        word-break: break-all;
+        /* word-break: break-all; */ /* Already applied above */
+        margin-right: 0; /* Remove right margin on smaller screens */
     }
     .scroll-buttons {
         right: 10px;

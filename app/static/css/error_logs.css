@@ -1,271 +1,331 @@
-/* 错误日志页面样式 */
+/* error_logs.css - Styles specific to the error logs page, complementing config_editor.css */
 
-/* 全局样式 */
-body {
-    font-family: 'Roboto', sans-serif;
-    background-color: #f8f9fa;
+/* Inherit body, container, h1, nav-tabs, config-section, scroll-buttons, refresh-btn, copyright from config_editor.css */
+
+/* Style the controls container */
+.controls-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 15px;
+    background-color: rgba(255, 255, 255, 0.8);
+    border-radius: 8px;
+    border: 1px solid rgba(0,0,0,0.05);
+    flex-wrap: wrap; /* Allow wrapping on smaller screens */
+    gap: 15px; /* Add gap between items */
+}
+
+.page-size-selector {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.page-size-selector label {
+    font-weight: bold;
+    color: #2c3e50;
+    margin-bottom: 0; /* Override default label margin */
+}
+
+.page-size-selector select {
+    padding: 8px 12px;
+    border: 1px solid rgba(0,0,0,0.1);
+    border-radius: 6px;
+    background-color: white;
+    font-size: 14px;
+    min-width: 70px; /* Ensure select has some width */
+}
+
+.page-size-selector span {
+    color: #2c3e50;
+}
+
+/* Style the action button (refresh) */
+.action-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 25px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 15px rgba(118, 75, 162, 0.2);
+}
+
+.action-btn i {
+    font-size: 1em;
+}
+
+/* Table container and styled table */
+.table-container {
+    overflow-x: auto; /* Allow horizontal scrolling for table */
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    border: 1px solid rgba(0,0,0,0.05);
+}
+
+.styled-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
     color: #333;
 }
 
-.container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 20px;
+.styled-table thead tr {
+    background-color: #f8f9fa; /* Light grey header */
+    text-align: left;
+    font-weight: bold;
+    color: #2c3e50;
+    border-bottom: 2px solid #dee2e6;
 }
 
-h1 {
-    color: #764ba2;
-    font-weight: 700;
-    margin-bottom: 0;
+.styled-table th,
+.styled-table td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #eee; /* Lighter border for rows */
+    vertical-align: middle;
 }
 
-/* 导航栏样式 */
-.nav-tabs {
-    display: flex;
-    margin-bottom: 20px;
-    border-bottom: none;
+.styled-table tbody tr {
+    transition: background-color 0.2s ease;
 }
 
-.tab-link {
-    padding: 10px 20px;
-    margin-right: 5px;
-    color: #555;
-    text-decoration: none;
-    border-radius: 5px;
-    transition: all 0.3s ease;
-    display: flex;
-    align-items: center;
+.styled-table tbody tr:hover {
+    background-color: #f1f1f1; /* Subtle hover effect */
 }
 
-.tab-link i {
-    margin-right: 5px;
+.styled-table tbody tr:last-of-type {
+    border-bottom: none; /* Remove border from last row */
 }
 
-.tab-link:hover {
-    background-color: #f0f0f0;
-    color: #764ba2;
-}
-
-.tab-link.active {
-    background-color: #764ba2;
-    color: white;
-}
-
-/* 卡片样式 */
-.card {
-    border-radius: 10px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    margin-bottom: 20px;
-    border: none;
-}
-
-.card-header {
-    background-color: #f8f9fa;
-    border-bottom: 1px solid #eee;
-    padding: 15px 20px;
-    border-radius: 10px 10px 0 0 !important;
-}
-
-.card-body {
-    padding: 20px;
-}
-
-.card-footer {
-    background-color: #f8f9fa;
-    border-top: 1px solid #eee;
-    padding: 15px 20px;
-    border-radius: 0 0 10px 10px !important;
-}
-
-/* 表格样式 */
-.table {
-    font-size: 0.9rem;
-}
-
-.table th {
-    background-color: #f8f9fa;
-    font-weight: 600;
-}
-
-/* 错误日志内容截断 */
+/* Error log content truncation */
 .error-log-content {
-    max-width: 300px;
+    max-width: 250px; /* Adjust as needed */
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    cursor: help; /* Indicate it's expandable/clickable */
 }
 
-/* 模态框样式 */
-.modal-dialog {
-    max-width: 800px;
+/* Style for the 'View Details' button */
+.btn-view-details {
+    background-color: #667eea;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: background-color 0.3s ease;
 }
 
-pre {
-    white-space: pre-wrap;
-    word-wrap: break-word;
-    max-height: 300px;
-    overflow-y: auto;
+.btn-view-details:hover {
+    background-color: #5a6fd0;
 }
 
-/* 分页样式 */
-.pagination .page-item.active .page-link {
-    background-color: #0d6efd;
-    border-color: #0d6efd;
+/* Status Indicators (Loading, No Data, Error) */
+.status-indicator {
+    text-align: center;
+    padding: 30px 15px;
+    margin: 20px 0;
+    border-radius: 8px;
+    display: none; /* Hidden by default */
+    color: #555;
+}
+
+.status-indicator.loading {
+    background-color: rgba(240, 240, 240, 0.7);
+}
+
+.status-indicator.no-data {
+     background-color: rgba(240, 240, 240, 0.7);
+}
+
+.status-indicator.error {
+    background-color: rgba(231, 76, 60, 0.1); /* Light red background */
+    color: #c0392b; /* Darker red text */
+    font-weight: bold;
+}
+
+.status-indicator p {
+    margin-top: 10px;
+    margin-bottom: 0;
+    font-size: 1.1em;
+}
+
+/* Basic spinner animation */
+.spinner {
+    border: 4px solid rgba(0, 0, 0, 0.1);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border-left-color: #667eea;
+    animation: spin 1s ease infinite;
+    margin: 0 auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Pagination Styles */
+.pagination-container {
+    display: flex;
+    justify-content: center;
+    padding: 20px 0;
+    margin-top: 20px;
+    border-top: 1px solid rgba(0,0,0,0.1);
+}
+
+.pagination {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    gap: 5px;
+}
+
+.pagination .page-item {
+    margin: 0;
 }
 
 .pagination .page-link {
-    color: #0d6efd;
-}
-
-/* 按钮样式 */
-.btn-view-details {
-    padding: 0.25rem 0.5rem;
-    font-size: 0.8rem;
-}
-
-/* 加载指示器样式 */
-#loadingIndicator .spinner-border {
-    width: 3rem;
-    height: 3rem;
-}
-
-/* 刷新按钮样式 */
-.refresh-btn {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background-color: #764ba2;
-    color: white;
-    border: none;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-    z-index: 1000;
-    transition: all 0.3s ease;
-}
-
-.refresh-btn:hover {
-    background-color: #5d3b82;
-    transform: scale(1.1);
-}
-
-.refresh-btn i {
-    font-size: 18px;
-}
-
-.rotating {
-    animation: rotate 1s linear infinite;
-}
-
-@keyframes rotate {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-}
-
-/* 滚动按钮样式 */
-.scroll-buttons {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    z-index: 1000;
-}
-
-.scroll-btn {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background-color: #764ba2;
-    color: white;
-    border: none;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.scroll-btn:hover {
-    background-color: #5d3b82;
-    transform: scale(1.1);
-}
-
-/* 版权信息样式 */
-.copyright {
-    text-align: center;
-    margin-top: 30px;
-    padding: 20px 0;
-    color: #666;
-    font-size: 0.9rem;
-    border-top: 1px solid #eee;
-}
-
-.copyright a {
-    color: #764ba2;
+    display: block;
+    padding: 8px 12px;
+    color: #667eea;
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
     text-decoration: none;
+    transition: all 0.3s ease;
+    font-size: 14px;
 }
 
-.copyright a:hover {
-    text-decoration: underline;
+.pagination .page-link:hover {
+    background-color: #f0f0f0;
+    border-color: #ccc;
 }
 
-.copyright img {
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    vertical-align: middle;
-    margin-right: 5px;
-}
-
-/* 复制状态提示 */
-#copyStatus {
-    position: fixed;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: rgba(0, 0, 0, 0.7);
+.pagination .page-item.active .page-link {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
-    padding: 10px 20px;
-    border-radius: 5px;
-    z-index: 1000;
-    opacity: 0;
-    transition: opacity 0.3s ease;
+    border-color: #667eea;
+    font-weight: bold;
 }
 
-#copyStatus.show {
-    opacity: 1;
+.pagination .page-item.disabled .page-link {
+    color: #aaa;
+    pointer-events: none;
+    background-color: #f9f9f9;
+    border-color: #ddd;
 }
 
-/* 响应式调整 */
+/* Modal Styles (Inherit base from config_editor.css, add specifics) */
+#logDetailModal .modal-content {
+    max-width: 800px; /* Wider modal for logs */
+}
+
+#logDetailModal h2 {
+    font-size: 1.5em;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.modal-body-content {
+    max-height: 60vh; /* Limit height and allow scrolling */
+    overflow-y: auto;
+    padding-right: 15px; /* Space for scrollbar */
+}
+
+.detail-item {
+    margin-bottom: 15px;
+}
+
+.detail-item h6 {
+    font-weight: bold;
+    color: #2c3e50;
+    margin-bottom: 5px;
+}
+
+.detail-item p,
+.detail-item pre {
+    background-color: #f8f9fa;
+    padding: 10px;
+    border-radius: 4px;
+    border: 1px solid #eee;
+    font-size: 14px;
+    color: #333;
+    margin: 0;
+    white-space: pre-wrap; /* Ensure pre content wraps */
+    word-wrap: break-word;
+}
+
+.detail-item pre {
+     max-height: 200px; /* Limit height of individual pre blocks */
+     overflow-y: auto;
+}
+
+/* Notification Style (Inherited from config_editor.css) */
+#copyStatus {
+    /* Uses .notification styles from config_editor.css */
+    background-color: rgba(39, 174, 96, 0.9); /* Green for success */
+}
+
+/* Responsive Adjustments */
 @media (max-width: 768px) {
-    .d-flex.justify-content-between {
+    .controls-container {
         flex-direction: column;
-        align-items: flex-start !important;
+        align-items: stretch; /* Stretch items to full width */
     }
-    
-    .d-flex.justify-content-between > div {
-        margin-top: 1rem;
-        width: 100%;
+
+    .page-size-selector {
+        justify-content: center; /* Center page size selector */
     }
-    
-    .card-header .d-flex {
-        flex-direction: column;
+
+    .action-btn {
+        width: 100%; /* Full width button */
+        justify-content: center;
     }
-    
-    .card-header .input-group {
-        margin-bottom: 0.5rem;
-        margin-right: 0 !important;
+
+    .styled-table {
+        font-size: 13px;
     }
-    
-    #refreshBtn {
-        width: 100%;
+
+    .styled-table th,
+    .styled-table td {
+        padding: 10px 8px;
+    }
+
+    .error-log-content {
+        max-width: 150px;
+    }
+
+    #logDetailModal .modal-content {
+        width: 95%;
+        padding: 20px;
+    }
+}
+
+@media (max-width: 480px) {
+     .styled-table {
+        font-size: 12px;
+    }
+     .btn-view-details {
+        padding: 4px 8px;
+        font-size: 11px;
     }
 }

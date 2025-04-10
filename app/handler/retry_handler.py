@@ -3,6 +3,7 @@
 from functools import wraps
 from typing import Callable, TypeVar
 
+from app.core.constants import MAX_RETRIES
 from app.log.logger import get_retry_logger
 
 T = TypeVar("T")
@@ -12,7 +13,7 @@ logger = get_retry_logger()
 class RetryHandler:
     """重试处理装饰器"""
 
-    def __init__(self, max_retries: int = 3, key_arg: str = "api_key"):
+    def __init__(self, max_retries: int = MAX_RETRIES, key_arg: str = "api_key"):
         self.max_retries = max_retries
         self.key_arg = key_arg
 

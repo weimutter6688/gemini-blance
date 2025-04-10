@@ -12,7 +12,9 @@
     <link rel="icon" href="/static/icons/icon-192x192.png">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <!-- Use config_editor.css for base styles -->
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/config_editor.css') }}">
+    <!-- Keep error_logs.css for specific styles -->
     <link rel="stylesheet" href="{{ url_for('static', path='/css/error_logs.css') }}">
 </head>
 <body>
@@ -20,84 +22,74 @@
         <button class="refresh-btn" onclick="refreshPage(this)">
             <i class="fas fa-sync-alt"></i>
         </button>
-        <div class="row">
-            <div class="col-12">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h1>Gemini Balance</h1>
-                    <div class="nav-tabs">
-                        <a href="/config" class="tab-link">
-                            <i class="fas fa-cog"></i> 配置编辑
-                        </a>
-                        <a href="/keys" class="tab-link">
-                            <i class="fas fa-key"></i> 密钥管理
-                        </a>
-                        <a href="/logs" class="tab-link active">
-                            <i class="fas fa-exclamation-triangle"></i> 错误日志
-                        </a>
-                    </div>
+        <h1>Gemini Balance</h1>
+        <div class="nav-tabs">
+            <a href="/config" class="tab-link">
+                <i class="fas fa-cog"></i> 配置编辑
+            </a>
+            <a href="/keys" class="tab-link">
+                <i class="fas fa-key"></i> 密钥管理
+            </a>
+            <a href="/logs" class="tab-link active">
+                <i class="fas fa-exclamation-triangle"></i> 错误日志
+            </a>
+        </div>
+
+        <div class="config-section active"> <!-- Use config-section for consistent layout -->
+            <h2><i class="fas fa-bug"></i> 错误日志列表</h2>
+
+            <div class="controls-container"> <!-- New container for controls -->
+                <div class="page-size-selector">
+                    <label for="pageSize">每页显示:</label>
+                    <select id="pageSize">
+                        <option value="10">10</option>
+                        <option value="20" selected>20</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                    <span>条</span>
                 </div>
-                
-                <div class="card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">错误日志列表</h5>
-                        <div class="d-flex">
-                            <div class="input-group me-2">
-                                <span class="input-group-text">每页显示</span>
-                                <select id="pageSize" class="form-select">
-                                    <option value="10">10</option>
-                                    <option value="20" selected>20</option>
-                                    <option value="50">50</option>
-                                    <option value="100">100</option>
-                                </select>
-                                <span class="input-group-text">条</span>
-                            </div>
-                            <button id="refreshBtn" class="btn btn-primary">
-                                <i class="bi bi-arrow-clockwise"></i> 刷新
-                            </button>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-striped table-hover">
-                                <thead>
-                                    <tr>
-                                        <th>ID</th>
-                                        <th>Gemini密钥</th>
-                                        <th>错误日志</th>
-                                        <th>模型名称</th>
-                                        <th>请求时间</th>
-                                        <th>操作</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="errorLogsTable">
-                                    <!-- 错误日志数据将通过JavaScript动态加载 -->
-                                </tbody>
-                            </table>
-                        </div>
-                        
-                        <div id="loadingIndicator" class="text-center my-4 d-none">
-                            <div class="spinner-border text-primary" role="status">
-                                <span class="visually-hidden">加载中...</span>
-                            </div>
-                            <p class="mt-2">加载中，请稍候...</p>
-                        </div>
-                        
-                        <div id="noDataMessage" class="text-center my-4 d-none">
-                            <p class="text-muted">暂无错误日志数据</p>
-                        </div>
-                        
-                        <div id="errorMessage" class="alert alert-danger my-4 d-none">
-                            加载错误日志失败，请稍后重试。
-                        </div>
-                    </div>
-                    <div class="card-footer">
-                        <nav aria-label="错误日志分页">
-                            <ul class="pagination justify-content-center mb-0" id="pagination">
-                                <!-- 分页控件将通过JavaScript动态加载 -->
-                            </ul>
-                        </nav>
-                    </div>
-                </div>
+                <button id="refreshBtn" class="action-btn"> <!-- Use a consistent button class -->
+                    <i class="fas fa-sync-alt"></i> 刷新
+                </button>
+            </div>
+
+            <div class="table-container"> <!-- New container for table -->
+                <table class="styled-table"> <!-- Use a custom table class -->
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Gemini密钥</th>
+                            <th>错误类型</th>
+                            <th>错误日志</th>
+                            <th>模型名称</th>
+                            <th>请求时间</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="errorLogsTable">
+                        <!-- 错误日志数据将通过JavaScript动态加载 -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="loadingIndicator" class="status-indicator loading"> <!-- Custom loading indicator -->
+                <div class="spinner"></div>
+                <p>加载中，请稍候...</p>
+            </div>
+
+            <div id="noDataMessage" class="status-indicator no-data"> <!-- Custom no-data message -->
+                <p>暂无错误日志数据</p>
+            </div>
+
+            <div id="errorMessage" class="status-indicator error"> <!-- Custom error message -->
+                <p>加载错误日志失败，请稍后重试。</p>
+            </div>
+
+            <div class="pagination-container"> <!-- Custom pagination container -->
+                <ul class="pagination" id="pagination">
+                    <!-- 分页控件将通过JavaScript动态加载 -->
+                </ul>
             </div>
         </div>
     </div>
@@ -111,51 +103,51 @@
         </button>
     </div>
 
-    <div id="copyStatus"></div>
+    <div id="copyStatus" class="notification"></div> <!-- Use notification class -->
 
     <div class="copyright">
-        © <script>document.write(new Date().getFullYear())</script> by <a href="https://linux.do/u/snaily" target="_blank"><img src="https://linux.do/user_avatar/linux.do/snaily/288/306510_2.gif" alt="snaily">snaily</a> | 
+        © <script>document.write(new Date().getFullYear())</script> by <a href="https://linux.do/u/snaily" target="_blank"><img src="https://linux.do/user_avatar/linux.do/snaily/288/306510_2.gif" alt="snaily">snaily</a> |
         <a href="https://github.com/snailyp/gemini-balance" target="_blank"><i class="fab fa-github"></i> GitHub</a>
     </div>
-    
-    <!-- 错误日志详情模态框 -->
-    <div class="modal fade" id="logDetailModal" tabindex="-1" aria-labelledby="logDetailModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-scrollable">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="logDetailModalLabel">错误日志详情</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
+
+    <!-- Custom Modal for Log Details -->
+    <div id="logDetailModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" id="closeLogDetailModalBtn">&times;</span>
+            <h2>错误日志详情</h2>
+            <div class="modal-body-content"> <!-- Added wrapper for consistent padding/styling -->
+                <div class="detail-item">
+                    <h6>Gemini密钥:</h6>
+                    <pre id="modalGeminiKey"></pre>
                 </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <h6>Gemini密钥:</h6>
-                        <pre id="modalGeminiKey" class="bg-light p-2 rounded"></pre>
-                    </div>
-                    <div class="mb-3">
-                        <h6>错误日志:</h6>
-                        <pre id="modalErrorLog" class="bg-light p-2 rounded"></pre>
-                    </div>
-                    <div class="mb-3">
-                        <h6>请求消息:</h6>
-                        <pre id="modalRequestMsg" class="bg-light p-2 rounded"></pre>
-                    </div>
-                    <div class="mb-3">
-                        <h6>模型名称:</h6>
-                        <p id="modalModelName"></p>
-                    </div>
-                    <div>
-                        <h6>请求时间:</h6>
-                        <p id="modalRequestTime"></p>
-                    </div>
+                <div class="detail-item">
+                    <h6>错误类型:</h6>
+                    <p id="modalErrorType"></p>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                <div class="detail-item">
+                    <h6>错误日志:</h6>
+                    <pre id="modalErrorLog"></pre>
                 </div>
+                <div class="detail-item">
+                    <h6>请求消息:</h6>
+                    <pre id="modalRequestMsg"></pre>
+                </div>
+                <div class="detail-item">
+                    <h6>模型名称:</h6>
+                    <p id="modalModelName"></p>
+                </div>
+                <div class="detail-item">
+                    <h6>请求时间:</h6>
+                    <p id="modalRequestTime"></p>
+                </div>
+            </div>
+            <div class="modal-actions">
+                 <button type="button" id="closeModalFooterBtn" class="reset-btn">关闭</button> <!-- Use consistent button style -->
             </div>
         </div>
     </div>
-    
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Keep custom JS, remove Bootstrap JS -->
     <script src="{{ url_for('static', path='/js/error_logs.js') }}"></script>
 </body>
 </html>

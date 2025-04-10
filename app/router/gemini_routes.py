@@ -87,7 +87,7 @@ async def list_models(
 
 @router.post("/models/{model_name}:generateContent")
 @router_v1beta.post("/models/{model_name}:generateContent")
-@RetryHandler(max_retries=3, key_arg="api_key")
+@RetryHandler(max_retries=settings.MAX_RETRIES, key_arg="api_key")
 async def generate_content(
     model_name: str,
     request: GeminiRequest,
@@ -118,7 +118,7 @@ async def generate_content(
 
 @router.post("/models/{model_name}:streamGenerateContent")
 @router_v1beta.post("/models/{model_name}:streamGenerateContent")
-@RetryHandler(max_retries=3, key_arg="api_key")
+@RetryHandler(max_retries=settings.MAX_RETRIES, key_arg="api_key")
 async def stream_generate_content(
     model_name: str,
     request: GeminiRequest,

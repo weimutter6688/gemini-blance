@@ -26,7 +26,7 @@ function copyToClipboard(text) {
 }
 
 function copyKeys(type) {
-    const keys = Array.from(document.querySelectorAll(`#${type}Keys .key-text`)).map(span => span.textContent.trim());
+    const keys = Array.from(document.querySelectorAll(`#${type}Keys .key-text`)).map(span => span.dataset.fullKey);
     const jsonKeys = JSON.stringify(keys);
     
     copyToClipboard(jsonKeys)
@@ -172,4 +172,23 @@ if ('serviceWorker' in navigator) {
                 console.log('ServiceWorker注册失败:', error);
             });
     });
+}
+function toggleKeyVisibility(button) {
+    const keyInfoDiv = button.closest('.key-info');
+    const keyTextSpan = keyInfoDiv.querySelector('.key-text');
+    const eyeIcon = button.querySelector('i');
+    const fullKey = keyTextSpan.dataset.fullKey;
+    const maskedKey = fullKey.substring(0, 4) + '...' + fullKey.substring(fullKey.length - 4);
+
+    if (keyTextSpan.textContent === maskedKey) {
+        keyTextSpan.textContent = fullKey;
+        eyeIcon.classList.remove('fa-eye');
+        eyeIcon.classList.add('fa-eye-slash');
+        button.title = '隐藏密钥';
+    } else {
+        keyTextSpan.textContent = maskedKey;
+        eyeIcon.classList.remove('fa-eye-slash');
+        eyeIcon.classList.add('fa-eye');
+        button.title = '显示密钥';
+    }
 }

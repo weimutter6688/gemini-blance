@@ -52,7 +52,7 @@ class KeyManager:
                 # await self.reset_failure_counts() 取消重置
                 return current_key
 
-    async def handle_api_failure(self, api_key: str) -> str:
+    async def handle_api_failure(self, api_key: str,retries: int) -> str:
         """处理API调用失败"""
         async with self.failure_count_lock:
             self.key_failure_counts[api_key] += 1
@@ -60,8 +60,10 @@ class KeyManager:
                 logger.warning(
                     f"API key {api_key} has failed {self.MAX_FAILURES} times"
                 )
-
-        return await self.get_next_working_key()
+        if retries < settings.MAX_RETRIES:
+            return await self.get_next_working_key()
+        else: 
+            return ""
 
     def get_fail_count(self, key: str) -> int:
         """获取指定密钥的失败次数"""

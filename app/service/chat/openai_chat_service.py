@@ -219,7 +219,7 @@ class OpenAIChatService:
     ) -> AsyncGenerator[str, None]:
         """处理流式聊天完成，添加重试逻辑"""
         retries = 0
-        max_retries = 3
+        max_retries = settings.MAX_RETRIES
         while retries < max_retries:
             try:
                 tool_call_flag = False
@@ -281,8 +281,9 @@ class OpenAIChatService:
                 )
                 
                 # 尝试切换 API Key
-                api_key = await self.key_manager.handle_api_failure(api_key)
-                logger.info(f"Switched to new API key: {api_key}")
+                api_key = await self.key_manager.handle_api_failure(api_key,retries)
+                if api_key:
+                    logger.info(f"Switched to new API key: {api_key}")
                 if retries >= max_retries:
                     logger.error(
                         f"Max retries ({max_retries}) reached for streaming. Raising error"
