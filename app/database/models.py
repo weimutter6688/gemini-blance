@@ -32,7 +32,10 @@ class ErrorLog(Base):
     
     id = Column(Integer, primary_key=True, autoincrement=True)
     gemini_key = Column(String(100), nullable=True, comment="Gemini API密钥")
+    model_name = Column(String(100), nullable=True, comment="模型名称")
+    error_type = Column(String(50), nullable=True, comment="错误类型")
     error_log = Column(Text, nullable=True, comment="错误日志")
+    error_code = Column(Integer, nullable=True, comment="错误代码")
     request_msg = Column(JSON, nullable=True, comment="请求消息")
     request_time = Column(DateTime, default=datetime.datetime.now, comment="请求时间")
     

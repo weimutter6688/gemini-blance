@@ -22,8 +22,9 @@ metadata = MetaData()
 # 创建基类
 Base = declarative_base(metadata=metadata)
 
-# 创建数据库连接池
-database = Database(DATABASE_URL)
+# 创建数据库连接池，并配置连接池参数
+# pool_recycle=3600: 回收空闲超过1小时的连接，防止MySQL服务器超时断开
+database = Database(DATABASE_URL, min_size=5, max_size=20, pool_recycle=3600)
 
 
 async def connect_to_db():

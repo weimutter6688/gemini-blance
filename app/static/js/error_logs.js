@@ -109,6 +109,7 @@ function renderErrorLogs() {
             <td>${log.id}</td>
             <td>${log.gemini_key || '无'}</td>
             <td class="error-log-content">${errorLogContent}</td>
+            <td>${log.model_name || '未知'}</td>
             <td>${formattedTime}</td>
             <td>
                 <button class="btn btn-sm btn-primary btn-view-details" data-log-id="${log.id}">
@@ -168,6 +169,8 @@ function showLogDetails(logId) {
     document.getElementById('modalGeminiKey').textContent = log.gemini_key || '无';
     document.getElementById('modalErrorLog').textContent = log.error_log || '无';
     document.getElementById('modalRequestMsg').textContent = formattedRequestMsg;
+    // Add model name display logic here - assuming an element with id 'modalModelName' exists
+    document.getElementById('modalModelName').textContent = log.model_name || '未知';
     document.getElementById('modalRequestTime').textContent = formattedTime;
     
     // 显示模态框

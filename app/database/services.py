@@ -101,7 +101,10 @@ async def update_setting(key: str, value: str, description: Optional[str] = None
 
 async def add_error_log(
     gemini_key: Optional[str] = None,
+    model_name: Optional[str] = None,
+    error_type: Optional[str] = None,
     error_log: Optional[str] = None,
+    error_code: Optional[int] = None,
     request_msg: Optional[Union[Dict[str, Any], str]] = None
 ) -> bool:
     """
@@ -110,6 +113,7 @@ async def add_error_log(
     Args:
         gemini_key: Gemini API密钥
         error_log: 错误日志
+        error_code: 错误代码 (例如 HTTP 状态码)
         request_msg: 请求消息
     
     Returns:
@@ -132,7 +136,10 @@ async def add_error_log(
             insert(ErrorLog)
             .values(
                 gemini_key=gemini_key,
+                error_type=error_type,
                 error_log=error_log,
+                model_name=model_name,
+                error_code=error_code,
                 request_msg=request_msg_json,
                 request_time=datetime.datetime.now()
             )

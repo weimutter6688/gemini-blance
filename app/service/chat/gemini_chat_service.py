@@ -1,6 +1,7 @@
 # app/services/chat_service.py
 
 import json
+import re
 from typing import Any, AsyncGenerator, Dict, List
 
 from app.config.config import settings
@@ -10,6 +11,7 @@ from app.handler.stream_optimizer import gemini_optimizer
 from app.log.logger import get_gemini_logger
 from app.service.client.api_client import GeminiApiClient
 from app.service.key.key_manager import KeyManager
+from app.database.services import add_error_log
 
 logger = get_gemini_logger()
 
@@ -145,8 +147,27 @@ class GeminiChatService:
     ) -> Dict[str, Any]:
         """生成内容"""
         payload = _build_payload(model, request)
-        response = await self.api_client.generate_content(payload, model, api_key)
-        return self.response_handler.handle_response(response, model, stream=False)
+        try:
+            response = await self.api_client.generate_content(payload, model, api_key)
+            return self.response_handler.handle_response(response, model, stream=False)
+        except Exception as e:
+            logger.error(f"Normal API call failed with error: {str(e)}")
+            error_code = None
+            error_log_msg = str(e)
+            # 尝试从异常消息中解析状态码
+            match = re.search(r"status code (\d+)", error_log_msg)
+            if match:
+                error_code = int(match.group(1))
+            
+            await add_error_log(
+                gemini_key=api_key,
+                model_name=model,
+                error_type="gemini_chat_service",
+                error_log=error_log_msg,
+                error_code=error_code,
+                request_msg=payload
+            )
+            raise e # 重新抛出异常，以便上层处理
 
     async def stream_generate_content(
         self, model: str, request: GeminiRequest, api_key: str
@@ -185,9 +206,25 @@ class GeminiChatService:
                 break
             except Exception as e:
                 retries += 1
+                error_log_msg = str(e)
                 logger.warning(
-                    f"Streaming API call failed with error: {str(e)}. Attempt {retries} of {max_retries}"
+                    f"Streaming API call failed with error: {error_log_msg}. Attempt {retries} of {max_retries}"
                 )
+                # 解析错误信息并记录到数据库
+                error_code = None
+                match = re.search(r"status code (\d+)", error_log_msg)
+                if match:
+                    error_code = int(match.group(1))
+                
+                await add_error_log(
+                    gemini_key=api_key,
+                    model_name=model,
+                    error_log=error_log_msg,
+                    error_code=error_code,
+                    request_msg=payload
+                )
+                
+                # 尝试切换 API Key
                 api_key = await self.key_manager.handle_api_failure(api_key)
                 logger.info(f"Switched to new API key: {api_key}")
                 if retries >= max_retries:
