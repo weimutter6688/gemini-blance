@@ -1,7 +1,15 @@
 /* error_logs.css - Styles specific to the error logs page, complementing config_editor.css */
 
-/* Inherit body, container, h1, nav-tabs, config-section, scroll-buttons, refresh-btn, copyright from config_editor.css */
+/* Inherit body, container, h1, nav-tabs, scroll-buttons, refresh-btn, copyright from config_editor.css */
 
+/* Add padding to the main content section */
+.config-section {
+    padding: 25px; /* Increased padding */
+    background-color: #fff; /* Ensure white background */
+    border-radius: 12px; /* Slightly larger radius */
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08); /* Softer shadow */
+    margin-top: 20px;
+}
 /* Style the controls container */
 .controls-container {
     display: flex;
@@ -9,9 +17,9 @@
     align-items: center;
     margin-bottom: 20px;
     padding: 15px;
-    background-color: rgba(255, 255, 255, 0.8);
-    border-radius: 8px;
-    border: 1px solid rgba(0,0,0,0.05);
+    background-color: #f8f9fa; /* Lighter background */
+    border-radius: 6px; /* Slightly smaller radius */
+    border: 1px solid #e9ecef; /* Lighter border */
     flex-wrap: wrap; /* Allow wrapping on smaller screens */
     gap: 15px; /* Add gap between items */
 }
@@ -67,13 +75,53 @@
     font-size: 1em;
 }
 
+/* Search Container Styles */
+.search-container {
+    display: flex;
+    flex-wrap: wrap; /* Allow wrapping on smaller screens */
+    gap: 10px; /* Space between elements */
+    align-items: center;
+    padding: 15px;
+    background-color: #f8f9fa; /* Consistent light background */
+    border-radius: 6px;
+    border: 1px solid #e9ecef; /* Lighter border */
+    margin-bottom: 25px; /* Increased margin */
+}
+
+.search-container input[type="text"],
+.search-container input[type="date"] {
+    padding: 8px 12px;
+    border: 1px solid rgba(0,0,0,0.1);
+    border-radius: 6px;
+    font-size: 14px;
+    flex-grow: 1; /* Allow inputs to grow */
+    min-width: 150px; /* Minimum width for inputs */
+}
+
+.search-container input[type="date"] {
+    min-width: 130px; /* Slightly less width for date inputs */
+    flex-grow: 0; /* Don't let date inputs grow excessively */
+}
+
+
+.search-container span {
+    color: #2c3e50;
+    margin: 0 5px;
+}
+
+.search-container .action-btn {
+    padding: 8px 15px; /* Slightly smaller padding for search button */
+    font-size: 14px;
+    flex-shrink: 0; /* Prevent button from shrinking */
+}
+
 /* Table container and styled table */
 .table-container {
     overflow-x: auto; /* Allow horizontal scrolling for table */
-    background-color: white;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-    border: 1px solid rgba(0,0,0,0.05);
+    background-color: #ffffff;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06); /* Softer shadow */
+    border: 1px solid #e9ecef; /* Lighter border */
 }
 
 .styled-table {
@@ -84,17 +132,17 @@
 }
 
 .styled-table thead tr {
-    background-color: #f8f9fa; /* Light grey header */
+    background-color: #eef2f7; /* Lighter, slightly blueish header */
     text-align: left;
-    font-weight: bold;
-    color: #2c3e50;
-    border-bottom: 2px solid #dee2e6;
+    font-weight: 600; /* Slightly bolder */
+    color: #495057; /* Darker grey text */
+    border-bottom: 1px solid #dee2e6; /* Thinner border */
 }
 
 .styled-table th,
 .styled-table td {
-    padding: 12px 15px;
-    border-bottom: 1px solid #eee; /* Lighter border for rows */
+    padding: 14px 15px; /* Increased padding */
+    border-bottom: 1px solid #f1f3f5; /* Very light border */
     vertical-align: middle;
 }
 
@@ -103,7 +151,16 @@
 }
 
 .styled-table tbody tr:hover {
-    background-color: #f1f1f1; /* Subtle hover effect */
+    background-color: #f8f9fa; /* Lighter hover effect */
+}
+
+/* Zebra striping for table body */
+.styled-table tbody tr:nth-child(even) {
+    background-color: #fcfdff; /* Very light blue for even rows */
+}
+
+.styled-table tbody tr:nth-child(even):hover {
+    background-color: #f0f4f8; /* Slightly darker hover for even rows */
 }
 
 .styled-table tbody tr:last-of-type {
@@ -121,18 +178,20 @@
 
 /* Style for the 'View Details' button */
 .btn-view-details {
-    background-color: #667eea;
-    color: white;
-    border: none;
-    padding: 5px 10px;
+    background-color: #e9ecef; /* Light grey background */
+    color: #495057; /* Dark grey text */
+    border: 1px solid #dee2e6; /* Subtle border */
+    padding: 4px 8px; /* Slightly smaller padding */
     border-radius: 4px;
     cursor: pointer;
     font-size: 12px;
-    transition: background-color 0.3s ease;
+    transition: all 0.2s ease;
 }
 
 .btn-view-details:hover {
-    background-color: #5a6fd0;
+    background-color: #dee2e6; /* Darker grey on hover */
+    border-color: #ced4da;
+    color: #212529;
 }
 
 /* Status Indicators (Loading, No Data, Error) */
@@ -204,10 +263,10 @@
 
 .pagination .page-link {
     display: block;
-    padding: 8px 12px;
-    color: #667eea;
+    padding: 8px 14px; /* Slightly wider */
+    color: #6c757d; /* Grey text */
     background-color: white;
-    border: 1px solid #ddd;
+    border: 1px solid #dee2e6; /* Lighter border */
     border-radius: 4px;
     text-decoration: none;
     transition: all 0.3s ease;
@@ -215,15 +274,15 @@
 }
 
 .pagination .page-link:hover {
-    background-color: #f0f0f0;
-    border-color: #ccc;
+    background-color: #e9ecef; /* Light grey hover */
+    border-color: #dee2e6;
 }
 
 .pagination .page-item.active .page-link {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #708cf3 0%, #8b60d5 100%); /* Adjusted gradient */
     color: white;
-    border-color: #667eea;
-    font-weight: bold;
+    border-color: #708cf3;
+    font-weight: 600;
 }
 
 .pagination .page-item.disabled .page-link {
@@ -263,10 +322,10 @@
 
 .detail-item p,
 .detail-item pre {
-    background-color: #f8f9fa;
-    padding: 10px;
-    border-radius: 4px;
-    border: 1px solid #eee;
+    background-color: #e9ecef; /* Lighter background for code blocks */
+    padding: 12px;
+    border-radius: 5px;
+    border: 1px solid #dee2e6; /* Match border color */
     font-size: 14px;
     color: #333;
     margin: 0;

@@ -4,8 +4,9 @@
 import datetime
 import json
 from typing import Dict, List, Optional, Any, Union
+from datetime import date, timedelta # Import date and timedelta
 
-from sqlalchemy import select, insert, update
+from sqlalchemy import select, insert, update, func # Import func for COUNT
 
 from app.database.connection import database
 from app.database.models import Settings, ErrorLog
@@ -152,21 +153,91 @@ async def add_error_log(
         return False
 
 
-async def get_error_logs(limit: int = 100, offset: int = 0) -> List[Dict[str, Any]]:
+async def get_error_logs(
+    limit: int = 20,
+    offset: int = 0,
+    key_search: Optional[str] = None,
+    error_search: Optional[str] = None,
+    start_date: Optional[date] = None,
+    end_date: Optional[date] = None
+) -> List[Dict[str, Any]]:
     """
-    获取错误日志
-    
+    获取错误日志，支持搜索和日期过滤
+
     Args:
-        limit: 限制数量
-        offset: 偏移量
-    
+        limit (int): 限制数量
+        offset (int): 偏移量
+        key_search (Optional[str]): Gemini密钥搜索词 (模糊匹配)
+        error_search (Optional[str]): 错误类型或日志内容搜索词 (模糊匹配)
+        start_date (Optional[date]): 开始日期
+        end_date (Optional[date]): 结束日期
+
     Returns:
         List[Dict[str, Any]]: 错误日志列表
     """
     try:
-        query = select(ErrorLog).order_by(ErrorLog.request_time.desc()).limit(limit).offset(offset)
+        query = select(ErrorLog)
+        
+        # Apply filters
+        if key_search:
+            query = query.where(ErrorLog.gemini_key.ilike(f"%{key_search}%"))
+        if error_search:
+            query = query.where(
+                (ErrorLog.error_type.ilike(f"%{error_search}%")) |
+                (ErrorLog.error_log.ilike(f"%{error_search}%"))
+            )
+        if start_date:
+            query = query.where(ErrorLog.request_time >= start_date)
+        if end_date:
+            # Add 1 day to end_date to include the whole day
+            query = query.where(ErrorLog.request_time < end_date + timedelta(days=1))
+
+        # Apply ordering, limit, and offset
+        query = query.order_by(ErrorLog.request_time.desc()).limit(limit).offset(offset)
+        
         result = await database.fetch_all(query)
         return [dict(row) for row in result]
     except Exception as e:
-        logger.error(f"Failed to get error logs: {str(e)}")
+        logger.exception(f"Failed to get error logs with filters: {str(e)}") # Use exception for stack trace
+        raise
+
+
+async def get_error_logs_count(
+    key_search: Optional[str] = None,
+    error_search: Optional[str] = None,
+    start_date: Optional[date] = None,
+    end_date: Optional[date] = None
+) -> int:
+    """
+    获取符合条件的错误日志总数
+
+    Args:
+        key_search (Optional[str]): Gemini密钥搜索词 (模糊匹配)
+        error_search (Optional[str]): 错误类型或日志内容搜索词 (模糊匹配)
+        start_date (Optional[date]): 开始日期
+        end_date (Optional[date]): 结束日期
+
+    Returns:
+        int: 日志总数
+    """
+    try:
+        query = select(func.count()).select_from(ErrorLog)
+
+        # Apply the same filters as get_error_logs
+        if key_search:
+            query = query.where(ErrorLog.gemini_key.ilike(f"%{key_search}%"))
+        if error_search:
+            query = query.where(
+                (ErrorLog.error_type.ilike(f"%{error_search}%")) |
+                (ErrorLog.error_log.ilike(f"%{error_search}%"))
+            )
+        if start_date:
+            query = query.where(ErrorLog.request_time >= start_date)
+        if end_date:
+            query = query.where(ErrorLog.request_time < end_date + timedelta(days=1))
+
+        count_result = await database.fetch_one(query)
+        return count_result[0] if count_result else 0
+    except Exception as e:
+        logger.exception(f"Failed to count error logs with filters: {str(e)}") # Use exception for stack trace
         raise

@@ -37,6 +37,12 @@ let currentPage = 1;
 let pageSize = 20;
 // let totalPages = 1; // totalPages will be calculated dynamically based on API response if available, or based on fetched data length
 let errorLogs = []; // Store fetched logs for details view
+let currentSearch = { // Store current search parameters
+    key: '',
+    error: '',
+    startDate: '',
+    endDate: ''
+};
 
 // DOM Elements Cache
 let pageSizeSelector;
@@ -48,6 +54,11 @@ let noDataMessage;
 let errorMessage;
 let logDetailModal;
 let modalCloseBtns; // Collection of close buttons for the modal
+let keySearchInput;
+let errorSearchInput;
+let startDateInput;
+let endDateInput;
+let searchBtn;
 
 // 页面加载完成后执行
 document.addEventListener('DOMContentLoaded', function() {
@@ -62,6 +73,11 @@ document.addEventListener('DOMContentLoaded', function() {
     logDetailModal = document.getElementById('logDetailModal');
     // Get all elements that should close the modal
     modalCloseBtns = document.querySelectorAll('#closeLogDetailModalBtn, #closeModalFooterBtn');
+    keySearchInput = document.getElementById('keySearch');
+    errorSearchInput = document.getElementById('errorSearch');
+    startDateInput = document.getElementById('startDate');
+    endDateInput = document.getElementById('endDate');
+    searchBtn = document.getElementById('searchBtn');
 
     // Initialize page size selector
     if (pageSizeSelector) {
@@ -83,6 +99,19 @@ document.addEventListener('DOMContentLoaded', function() {
                  this.classList.remove('loading');
                  this.disabled = false;
             });
+        });
+    }
+
+    // Initialize search button
+    if (searchBtn) {
+        searchBtn.addEventListener('click', function() {
+            // Update search parameters from input fields
+            currentSearch.key = keySearchInput ? keySearchInput.value.trim() : '';
+            currentSearch.error = errorSearchInput ? errorSearchInput.value.trim() : '';
+            currentSearch.startDate = startDateInput ? startDateInput.value : '';
+            currentSearch.endDate = endDateInput ? endDateInput.value : '';
+            currentPage = 1; // Reset to first page on new search
+            loadErrorLogs();
         });
     }
 
@@ -112,7 +141,22 @@ async function loadErrorLogs() {
     const offset = (currentPage - 1) * pageSize;
 
     try {
-        const response = await fetch(`/api/logs/errors?limit=${pageSize}&offset=${offset}`);
+        // Construct the API URL with search parameters
+        let apiUrl = `/api/logs/errors?limit=${pageSize}&offset=${offset}`;
+        if (currentSearch.key) {
+            apiUrl += `&key_search=${encodeURIComponent(currentSearch.key)}`;
+        }
+        if (currentSearch.error) {
+            apiUrl += `&error_search=${encodeURIComponent(currentSearch.error)}`;
+        }
+        if (currentSearch.startDate) {
+            apiUrl += `&start_date=${encodeURIComponent(currentSearch.startDate)}`;
+        }
+        if (currentSearch.endDate) {
+            apiUrl += `&end_date=${encodeURIComponent(currentSearch.endDate)}`;
+        }
+
+        const response = await fetch(apiUrl);
         if (!response.ok) {
             // Try to get error message from response body
             let errorData;
@@ -162,9 +206,11 @@ function renderErrorLogs(logs) {
         return;
     }
 
-    logs.forEach(log => {
-        const row = document.createElement('tr');
+    const startIndex = (currentPage - 1) * pageSize; // Calculate starting index for the current page
 
+    logs.forEach((log, index) => { // Add index parameter to forEach
+        const row = document.createElement('tr');
+        const sequentialId = startIndex + index + 1; // Calculate sequential ID for the current page
         // Format date
         let formattedTime = 'N/A';
         try {
@@ -181,9 +227,16 @@ function renderErrorLogs(logs) {
         // Truncate error log content for display
         const errorLogContent = log.error_log ? log.error_log.substring(0, 100) + (log.error_log.length > 100 ? '...' : '') : '无';
 
+        // Mask the Gemini key for display in the table
+        const maskKey = (key) => {
+            if (!key || key.length < 8) return key || '无'; // Don't mask short keys or null
+            return `${key.substring(0, 4)}...${key.substring(key.length - 4)}`;
+        };
+        const maskedKey = maskKey(log.gemini_key);
+
         row.innerHTML = `
-            <td>${log.id}</td>
-            <td>${log.gemini_key || '无'}</td>
+            <td>${sequentialId}</td> <!-- Use sequential ID -->
+            <td title="${log.gemini_key || ''}">${maskedKey}</td>
             <td>${log.error_type || '未知'}</td>
             <td class="error-log-content" title="${log.error_log || ''}">${errorLogContent}</td>
             <td>${log.model_name || '未知'}</td>
@@ -246,7 +299,7 @@ function showLogDetails(logId) {
         }
     }
 
-    // Populate modal content
+    // Populate modal content (show full key in modal)
     document.getElementById('modalGeminiKey').textContent = log.gemini_key || '无';
     document.getElementById('modalErrorType').textContent = log.error_type || '未知';
     document.getElementById('modalErrorLog').textContent = log.error_log || '无';
