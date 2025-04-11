@@ -1,3 +1,5 @@
+// 统计数据可视化交互效果
+
 function copyToClipboard(text) {
     if (navigator.clipboard && navigator.clipboard.writeText) {
         return navigator.clipboard.writeText(text);
@@ -25,11 +27,35 @@ function copyToClipboard(text) {
     }
 }
 
+// 添加统计项动画效果
+function initStatItemAnimations() {
+    const statItems = document.querySelectorAll('.stat-item');
+    statItems.forEach(item => {
+        item.addEventListener('mouseenter', () => {
+            item.style.transform = 'scale(1.05)';
+            const icon = item.querySelector('.stat-icon');
+            if (icon) {
+                icon.style.opacity = '0.2';
+                icon.style.transform = 'scale(1.1) rotate(0deg)';
+            }
+        });
+        
+        item.addEventListener('mouseleave', () => {
+            item.style.transform = '';
+            const icon = item.querySelector('.stat-icon');
+            if (icon) {
+                icon.style.opacity = '';
+                icon.style.transform = '';
+            }
+        });
+    });
+}
+
 function copyKeys(type) {
     const keys = Array.from(document.querySelectorAll(`#${type}Keys .key-text`)).map(span => span.dataset.fullKey);
     
     if (keys.length === 0) {
-        showCopyStatus('没有可复制的密钥', true);
+        showNotification('没有可复制的密钥', 'error');
         return;
     }
     
@@ -37,48 +63,26 @@ function copyKeys(type) {
     
     copyToClipboard(keysText)
         .then(() => {
-            showCopyStatus(`已成功复制${keys.length}个${type === 'valid' ? '有效' : '无效'}密钥到剪贴板`);
+            showNotification(`已成功复制${keys.length}个${type === 'valid' ? '有效' : '无效'}密钥`);
         })
         .catch((err) => {
             console.error('无法复制文本: ', err);
-            showCopyStatus('复制失败，请重试', true);
+            showNotification('复制失败，请重试', 'error');
         });
 }
 
 function copyKey(key) {
     copyToClipboard(key)
         .then(() => {
-            showCopyStatus(`已成功复制密钥到剪贴板`);
+            showNotification(`已成功复制密钥`);
         })
         .catch((err) => {
             console.error('无法复制文本: ', err);
-            showCopyStatus('复制失败，请重试', true);
+            showNotification('复制失败，请重试', 'error');
         });
 }
 
-function showCopyStatus(message, isError = false) {
-    const statusElement = document.getElementById('copyStatus');
-    statusElement.textContent = message;
-    
-    // 添加适当的样式类
-    if (isError) {
-        statusElement.classList.add('bg-danger-500');
-        statusElement.classList.remove('bg-black');
-    } else {
-        statusElement.classList.remove('bg-danger-500');
-        statusElement.classList.add('bg-black');
-    }
-    
-    // 应用过渡效果
-    statusElement.style.opacity = "1";
-    statusElement.style.transform = "translate(-50%, 0)";
-    
-    // 设置自动消失
-    setTimeout(() => {
-        statusElement.style.opacity = "0";
-        statusElement.style.transform = "translate(-50%, 10px)";
-    }, 3000);
-}
+// 移除 showCopyStatus 函数，因为它已被 showNotification 替代
 
 async function verifyKey(key, button) {
     try {
@@ -140,25 +144,38 @@ async function resetKeyFailCount(key, button) {
 
         // 根据重置结果更新UI
         if (data.success) {
-            showCopyStatus('失败计数重置成功');
+            showNotification('失败计数重置成功');
+            // 成功时保留绿色背景一会儿
             button.style.backgroundColor = '#27ae60';
-            setTimeout(() => location.reload(), 1500);
+            // 稍后刷新页面
+            setTimeout(() => location.reload(), 1000);
         } else {
             const errorMsg = data.message || '重置失败';
-            showCopyStatus('重置失败: ' + errorMsg, true);
+            showNotification('重置失败: ' + errorMsg, 'error');
+            // 失败时保留红色背景一会儿
             button.style.backgroundColor = '#e74c3c';
         }
 
-        // 1秒后恢复按钮原始状态
-        setTimeout(() => {
-            button.innerHTML = originalHtml;
-            button.disabled = false;
-            button.style.backgroundColor = '';
-        }, 1000);
+        // 立即恢复按钮状态，除非成功或失败时需要短暂显示颜色
+        if (!data.success) {
+             // 如果失败，1秒后恢复按钮
+             setTimeout(() => {
+                 button.innerHTML = originalHtml;
+                 button.disabled = false;
+                 button.style.backgroundColor = '';
+             }, 1000);
+        } else {
+             // 如果成功，在刷新前恢复按钮（虽然用户可能看不到）
+             button.innerHTML = originalHtml;
+             button.disabled = false;
+             // 背景色会在刷新时重置
+        }
 
     } catch (error) {
         console.error('重置失败:', error);
-        showCopyStatus('重置请求失败: ' + error.message, true);
+        showNotification('重置请求失败: ' + error.message, 'error');
+        // 确保在捕获到错误时恢复按钮状态
+        button.innerHTML = originalHtml; // 需要确保 originalHtml 在此作用域可用
         button.disabled = false;
         button.innerHTML = '<i class="fas fa-redo-alt"></i> 重置';
     }
@@ -280,11 +297,9 @@ async function executeResetAll(type) {
             console.error('API请求失败:', fetchError);
             showResultModal(false, '批量重置请求失败: ' + fetchError.message);
         } finally {
-            // 恢复按钮原始状态
-            setTimeout(() => {
-                resetButton.innerHTML = originalHtml;
-                resetButton.disabled = false;
-            }, 500);
+            // 立即恢复按钮状态
+             resetButton.innerHTML = originalHtml;
+             resetButton.disabled = false;
         }
     } catch (error) {
         console.error('批量重置失败:', error);
@@ -315,12 +330,40 @@ function refreshPage(button) {
     }, 300);
 }
 
+// 重写切换区域显示/隐藏函数，以更好地支持新样式
 function toggleSection(header, sectionId) {
     const toggleIcon = header.querySelector('.toggle-icon');
     const content = header.nextElementSibling;
     
-    toggleIcon.classList.toggle('collapsed');
-    content.classList.toggle('collapsed');
+    if (toggleIcon && content) {
+        // 添加旋转动画
+        toggleIcon.classList.toggle('collapsed');
+        
+        // 控制内容区域的可见性
+        if (!content.classList.contains('collapsed')) {
+            // 收起内容
+            content.style.maxHeight = '0px';
+            content.style.opacity = '0';
+            content.style.overflow = 'hidden';
+            content.classList.add('collapsed');
+            
+            // 为动画添加延迟
+            setTimeout(() => {
+                content.style.padding = '0';
+            }, 100);
+        } else {
+            // 展开内容
+            content.classList.remove('collapsed');
+            content.style.padding = '1rem';
+            content.style.maxHeight = '2000px'; // 使用足够大的高度
+            content.style.opacity = '1';
+            
+            // 为动画添加延迟
+            setTimeout(() => {
+                content.style.overflow = 'visible';
+            }, 300);
+        }
+    }
 }
 
 // 筛选有效密钥（根据失败次数阈值）
@@ -344,28 +387,77 @@ function filterValidKeys() {
 
 // 初始化
 document.addEventListener('DOMContentLoaded', () => {
-    // 移除对滚动按钮显示的控制，让它们由HTML/CSS控制
+    // 初始化统计区块动画
+    initStatItemAnimations();
     
-    // 监听展开/折叠事件
-    document.querySelectorAll('.key-list h2').forEach(header => {
-        header.addEventListener('click', () => {
-            // 不再调用updateScrollButtons
+    // 添加数字滚动动画效果
+    const animateCounters = () => {
+        const statValues = document.querySelectorAll('.stat-value');
+        statValues.forEach(valueElement => {
+            const finalValue = parseInt(valueElement.textContent, 10);
+            if (!isNaN(finalValue)) {
+                // 保存原始值以便稍后恢复
+                if (!valueElement.dataset.originalValue) {
+                    valueElement.dataset.originalValue = valueElement.textContent;
+                }
+                
+                // 数字滚动动画
+                let startValue = 0;
+                const duration = 1500;
+                const startTime = performance.now();
+                
+                const updateCounter = (currentTime) => {
+                    const elapsedTime = currentTime - startTime;
+                    if (elapsedTime < duration) {
+                        const progress = elapsedTime / duration;
+                        // 使用缓动函数使动画更自然
+                        const easeOutValue = 1 - Math.pow(1 - progress, 3);
+                        const currentValue = Math.floor(easeOutValue * finalValue);
+                        valueElement.textContent = currentValue;
+                        requestAnimationFrame(updateCounter);
+                    } else {
+                        // 恢复为原始值，以确保准确性
+                        valueElement.textContent = valueElement.dataset.originalValue;
+                    }
+                };
+                
+                requestAnimationFrame(updateCounter);
+            }
+        });
+    };
+    
+    // 在页面加载后启动数字动画
+    setTimeout(animateCounters, 300);
+    
+    // 添加卡片悬停效果
+    document.querySelectorAll('.stats-card').forEach(card => {
+        card.addEventListener('mouseenter', () => {
+            card.classList.add('shadow-lg');
+            card.style.transform = 'translateY(-2px)';
+        });
+        
+        card.addEventListener('mouseleave', () => {
+            card.classList.remove('shadow-lg');
+            card.style.transform = '';
         });
     });
-
-    // 更新版权年份
-    const copyrightYearElement = document.querySelector('.copyright script');
-    if (copyrightYearElement && copyrightYearElement.parentNode.classList.contains('copyright')) {
-        // 确保只更新版权部分的年份
-        copyrightYearElement.textContent = new Date().getFullYear();
-    }
-
+    
+    // 监听展开/折叠事件
+    document.querySelectorAll('.stats-card-title').forEach(header => {
+        header.addEventListener('click', () => {
+            const card = header.closest('.stats-card');
+            if (card) {
+                card.classList.toggle('active');
+            }
+        });
+    });
+    
     // 添加筛选输入框事件监听
     const thresholdInput = document.getElementById('failCountThreshold');
     if (thresholdInput) {
         // 使用 'input' 事件实时响应输入变化
         thresholdInput.addEventListener('input', filterValidKeys);
-        // 初始加载时应用一次筛选（基于默认值1）
+        // 初始加载时应用一次筛选
         filterValidKeys();
     }
 });

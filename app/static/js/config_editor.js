@@ -469,15 +469,7 @@ async function saveConfig() {
         
         const result = await response.json();
         
-        // 显示保存状态
-        const saveStatus = document.getElementById('saveStatus');
-        saveStatus.style.opacity = "1";
-        saveStatus.style.transform = "translate(-50%, -50%) scale(1.1)";
-        
-        setTimeout(() => {
-            saveStatus.style.opacity = "0";
-            saveStatus.style.transform = "translate(-50%, -50%) scale(0.95)";
-        }, 3000);
+        // 移除居中的 saveStatus 提示
         
         showNotification('配置保存成功', 'success');
 
@@ -488,21 +480,7 @@ async function saveConfig() {
         console.error('保存配置失败:', error);
         // 保存失败时，也尝试重启定时任务，以防万一
         await startScheduler();
-        // 显示错误状态
-        const saveStatus = document.getElementById('saveStatus');
-        saveStatus.style.backgroundColor = "#ef4444"; // 红色背景
-        saveStatus.style.opacity = "1";
-        saveStatus.style.transform = "translate(-50%, -50%) scale(1.1)";
-        saveStatus.querySelector('.status-icon i').className = 'fas fa-times-circle';
-        saveStatus.querySelector('.status-text').textContent = '配置保存失败';
-        
-        setTimeout(() => {
-            saveStatus.style.opacity = "0";
-            saveStatus.style.transform = "translate(-50%, -50%) scale(0.95)";
-            setTimeout(() => {
-                saveStatus.style.backgroundColor = "#22c55e"; // 恢复绿色背景
-            }, 300);
-        }, 3000);
+        // 移除居中的 saveStatus 提示
         
         showNotification('保存配置失败: ' + error.message, 'error');
     }

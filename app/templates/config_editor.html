@@ -54,7 +54,7 @@
             
             <h1 class="text-3xl font-extrabold text-center text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-primary-700 mb-4">
                  <img src="/static/icons/logo.png" alt="Gemini Balance Logo" class="h-9 inline-block align-middle mr-2">
-                 Gemini Balance
+                 Gemini Balance - 配置编辑
             </h1>
             
             <!-- Navigation Tabs -->
@@ -63,7 +63,7 @@
                     <i class="fas fa-cog"></i> 配置编辑
                 </a>
                 <a href="/keys" class="whitespace-nowrap flex items-center justify-center gap-2 px-6 py-3 font-medium rounded-lg bg-white bg-opacity-50 hover:bg-opacity-70 text-gray-700 transition-all duration-200">
-                    <i class="fas fa-key"></i> 密钥状态
+                    <i class="fas fa-tachometer-alt"></i> 监控面板
                 </a>
                 <a href="/logs" class="whitespace-nowrap flex items-center justify-center gap-2 px-6 py-3 font-medium rounded-lg bg-white bg-opacity-50 hover:bg-opacity-70 text-gray-700 transition-all duration-200">
                     <i class="fas fa-exclamation-triangle"></i> 错误日志
@@ -89,11 +89,7 @@
                 </button>
             </div>
             
-            <!-- Save Status Banner -->
-            <div class="save-status fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-green-500 text-white px-8 py-4 rounded-xl font-medium flex items-center gap-3 shadow-xl z-50 opacity-0 transition-all duration-300 scale-105" id="saveStatus">
-                <span class="status-icon text-xl"><i class="fas fa-check-circle"></i></span>
-                <span class="status-text text-lg">配置已保存</span>
-            </div>
+            <!-- Save Status Banner (Removed - using notification component now) -->
             
             <!-- Configuration Form -->
             <form id="configForm" class="mt-6">

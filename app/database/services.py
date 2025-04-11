@@ -3,12 +3,12 @@
 """
 import json
 from typing import Dict, List, Optional, Any, Union
-from datetime import datetime
+from datetime import datetime # Keep this import
 
-from sqlalchemy import select, insert, update, func # Import func for COUNT
+from sqlalchemy import select, insert, update, func
 
 from app.database.connection import database
-from app.database.models import Settings, ErrorLog
+from app.database.models import Settings, ErrorLog, RequestLog # Import RequestLog
 from app.log.logger import get_database_logger
 
 logger = get_database_logger()
@@ -73,7 +73,7 @@ async def update_setting(key: str, value: str, description: Optional[str] = None
                 .values(
                     value=value,
                     description=description if description else setting["description"],
-                    updated_at=datetime.datetime.now()
+                    updated_at=datetime.now() # Use datetime.now()
                 )
             )
             await database.execute(query)
@@ -87,8 +87,8 @@ async def update_setting(key: str, value: str, description: Optional[str] = None
                     key=key,
                     value=value,
                     description=description,
-                    created_at=datetime.datetime.now(),
-                    updated_at=datetime.datetime.now()
+                    created_at=datetime.now(), # Use datetime.now()
+                    updated_at=datetime.now() # Use datetime.now()
                 )
             )
             await database.execute(query)
@@ -241,3 +241,44 @@ async def get_error_logs_count(
     except Exception as e:
         logger.exception(f"Failed to count error logs with filters: {str(e)}") # Use exception for stack trace
         raise
+
+# 新增函数：添加请求日志
+async def add_request_log(
+    model_name: Optional[str],
+    api_key: Optional[str],
+    is_success: bool,
+    status_code: Optional[int] = None,
+    latency_ms: Optional[int] = None,
+    request_time: Optional[datetime] = None
+) -> bool:
+    """
+    添加 API 请求日志
+
+    Args:
+        model_name: 模型名称
+        api_key: 使用的 API 密钥
+        is_success: 请求是否成功
+        status_code: API 响应状态码
+        latency_ms: 请求耗时(毫秒)
+        request_time: 请求发生时间 (如果为 None, 则使用当前时间)
+
+    Returns:
+        bool: 是否添加成功
+    """
+    try:
+        log_time = request_time if request_time else datetime.now()
+
+        query = insert(RequestLog).values(
+            request_time=log_time,
+            model_name=model_name,
+            api_key=api_key,
+            is_success=is_success,
+            status_code=status_code,
+            latency_ms=latency_ms
+        )
+        await database.execute(query)
+        # logger.debug(f"Added request log: key={api_key[:4]}..., success={is_success}, model={model_name}") # Use debug level
+        return True
+    except Exception as e:
+        logger.error(f"Failed to add request log: {str(e)}")
+        return False

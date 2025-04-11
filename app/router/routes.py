@@ -10,6 +10,7 @@ from app.core.security import verify_auth_token
 from app.log.logger import get_routes_logger
 from app.router import gemini_routes, openai_routes, config_routes, log_routes, scheduler_routes # 新增导入
 from app.service.key.key_manager import get_key_manager_instance
+from app.service.stats_service import get_api_usage_stats # <-- Import stats service
 
 logger = get_routes_logger()
 
@@ -86,19 +87,31 @@ def setup_page_routes(app: FastAPI) -> None:
 
             key_manager = await get_key_manager_instance()
             keys_status = await key_manager.get_keys_by_status()
-            total = len(keys_status["valid_keys"]) + len(keys_status["invalid_keys"])
-            logger.info(f"Keys status retrieved successfully. Total keys: {total}")
+            total_keys = len(keys_status["valid_keys"]) + len(keys_status["invalid_keys"])
+            valid_key_count = len(keys_status["valid_keys"])
+            invalid_key_count = len(keys_status["invalid_keys"])
+
+            # Get API usage stats
+            api_stats = await get_api_usage_stats()
+            logger.info(f"API stats retrieved: {api_stats}")
+
+            logger.info(f"Keys status retrieved successfully. Total keys: {total_keys}")
             return templates.TemplateResponse(
                 "keys_status.html",
                 {
                     "request": request,
                     "valid_keys": keys_status["valid_keys"],
                     "invalid_keys": keys_status["invalid_keys"],
-                    "total": total,
+                    "total_keys": total_keys, # Renamed for clarity
+                    "valid_key_count": valid_key_count, # Added count
+                    "invalid_key_count": invalid_key_count, # Added count
+                    "api_stats": api_stats, # <-- Pass stats to template
                 },
             )
         except Exception as e:
-            logger.error(f"Error retrieving keys status: {str(e)}")
+            logger.error(f"Error retrieving keys status or API stats: {str(e)}")
+            # Optionally, render template with error or default stats
+            # For now, re-raise to show error page
             raise
             
     @app.get("/config", response_class=HTMLResponse)

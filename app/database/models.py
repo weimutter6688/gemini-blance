@@ -2,7 +2,7 @@
 数据库模型模块
 """
 import datetime
-from sqlalchemy import Column, Integer, String, Text, DateTime, JSON
+from sqlalchemy import Column, Integer, String, Text, DateTime, JSON, Boolean # 添加 Boolean
 
 from app.database.connection import Base
 
@@ -41,3 +41,21 @@ class ErrorLog(Base):
     
     def __repr__(self):
         return f"<ErrorLog(id='{self.id}', gemini_key='{self.gemini_key}')>"
+
+# 新增 RequestLog 模型
+class RequestLog(Base):
+    """
+    API 请求日志表
+    """
+    __tablename__ = "t_request_log"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    request_time = Column(DateTime, default=datetime.datetime.now, comment="请求时间")
+    model_name = Column(String(100), nullable=True, comment="模型名称")
+    api_key = Column(String(100), nullable=True, comment="使用的API密钥") # 考虑安全性，后续可优化
+    is_success = Column(Boolean, nullable=False, comment="请求是否成功")
+    status_code = Column(Integer, nullable=True, comment="API响应状态码")
+    latency_ms = Column(Integer, nullable=True, comment="请求耗时(毫秒)")
+
+    def __repr__(self):
+        return f"<RequestLog(id='{self.id}', key='{self.api_key[:4]}...', success='{self.is_success}')>"

@@ -169,3 +169,7 @@ def get_database_logger():
 
 def get_log_routes_logger():
     return Logger.setup_logger("log_routes")
+
+
+def get_stats_logger():
+    return Logger.setup_logger("stats")
