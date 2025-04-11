@@ -9,6 +9,7 @@ uvicorn
 google-genai
 jinja2
 python-multipart
+cryptography # 支持 MySQL 8+ caching_sha2_password 验证
 # 数据库相关依赖
 pymysql
 sqlalchemy
