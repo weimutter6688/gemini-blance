@@ -272,17 +272,17 @@
                         <span class="text-xs text-gray-500">本月: {{ api_stats.calls_month }}</span>
                     </div>
                     <div class="stats-grid">
-                        <div class="stat-item stat-warning" title="1分钟内API调用">
+                        <div class="stat-item stat-warning cursor-pointer hover:bg-amber-100" title="点击查看1分钟内调用详情" data-period="1m" onclick="showApiCallDetails('1m')">
                             <div class="stat-value">{{ api_stats.calls_1m }}</div>
                             <div class="stat-label">1分钟调用</div>
                             <i class="stat-icon fas fa-stopwatch"></i>
                         </div>
-                        <div class="stat-item stat-info" title="1小时内API调用">
+                        <div class="stat-item stat-info cursor-pointer hover:bg-blue-100" title="点击查看1小时内调用详情" data-period="1h" onclick="showApiCallDetails('1h')">
                             <div class="stat-value">{{ api_stats.calls_1h }}</div>
                             <div class="stat-label">1小时调用</div>
                             <i class="stat-icon fas fa-hourglass-half"></i>
                         </div>
-                        <div class="stat-item stat-primary" title="24小时内API调用">
+                        <div class="stat-item stat-primary cursor-pointer hover:bg-indigo-100" title="点击查看24小时内调用详情" data-period="24h" onclick="showApiCallDetails('24h')">
                             <div class="stat-value">{{ api_stats.calls_24h }}</div>
                             <div class="stat-label">24小时调用</div>
                             <i class="stat-icon fas fa-calendar-day"></i>
@@ -480,6 +480,30 @@
             <div class="flex justify-center">
                 <button id="resultModalConfirmBtn" onclick="closeResultModal()" class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors">
                     确定
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- API 调用详情模态框 -->
+    <div id="apiCallDetailsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg p-6 shadow-xl max-w-3xl w-full animate-fade-in"> <!-- Increased max-width -->
+            <div class="flex items-center justify-between mb-4 border-b pb-3">
+                <h3 class="text-xl font-semibold text-gray-800" id="apiCallDetailsModalTitle">API 调用详情</h3>
+                <button onclick="closeApiCallDetailsModal()" class="text-gray-500 hover:text-gray-700 focus:outline-none text-xl">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div id="apiCallDetailsContent" class="mb-6 max-h-[60vh] overflow-y-auto pr-2"> <!-- Increased max-height and added padding-right -->
+                <!-- 详细数据将加载到这里 -->
+                <div class="text-center py-10">
+                     <i class="fas fa-spinner fa-spin text-primary-600 text-3xl"></i>
+                     <p class="text-gray-500 mt-2">加载中...</p>
+                </div>
+            </div>
+            <div class="flex justify-end pt-4 border-t">
+                <button onclick="closeApiCallDetailsModal()" class="px-5 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg transition-colors text-sm font-medium">
+                    关闭
                 </button>
             </div>
         </div>

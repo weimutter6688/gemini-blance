@@ -67,3 +67,57 @@ async def get_api_usage_stats() -> dict:
             "calls_24h": 0,
             "calls_month": 0,
         }
+
+
+async def get_api_call_details(period: str) -> list[dict]:
+    """
+    获取指定时间段内的 API 调用详情
+
+    Args:
+        period: 时间段标识 ('1m', '1h', '24h')
+
+    Returns:
+        包含调用详情的字典列表，每个字典包含 timestamp, key, model, status
+
+    Raises:
+        ValueError: 如果 period 无效
+    """
+    now = datetime.datetime.now()
+    if period == '1m':
+        start_time = now - datetime.timedelta(minutes=1)
+    elif period == '1h':
+        start_time = now - datetime.timedelta(hours=1)
+    elif period == '24h':
+        start_time = now - datetime.timedelta(hours=24)
+    else:
+        raise ValueError(f"无效的时间段标识: {period}")
+
+    try:
+        query = select(
+            RequestLog.request_time.label("timestamp"),
+            RequestLog.api_key.label("key"),
+            RequestLog.model_name.label("model"),
+            RequestLog.status_code # We might need to map this to 'success'/'failure' later
+        ).where(
+            RequestLog.request_time >= start_time
+        ).order_by(RequestLog.request_time.desc()) # Order by most recent first
+
+        results = await database.fetch_all(query)
+
+        # Convert results to list of dicts and map status_code
+        details = []
+        for row in results:
+            status = 'success' if 200 <= row['status_code'] < 300 else 'failure'
+            details.append({
+                "timestamp": row['timestamp'].isoformat(), # Use ISO format for JS compatibility
+                "key": row['key'],
+                "model": row['model'],
+                "status": status
+            })
+        logger.info(f"Retrieved {len(details)} API call details for period '{period}'")
+        return details
+
+    except Exception as e:
+        logger.error(f"Failed to get API call details for period '{period}': {e}")
+        # Re-raise the exception to be handled by the route
+        raise

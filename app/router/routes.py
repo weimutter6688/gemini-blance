@@ -10,7 +10,7 @@ from app.core.security import verify_auth_token
 from app.log.logger import get_routes_logger
 from app.router import gemini_routes, openai_routes, config_routes, log_routes, scheduler_routes # 新增导入
 from app.service.key.key_manager import get_key_manager_instance
-from app.service.stats_service import get_api_usage_stats # <-- Import stats service
+from app.service.stats_service import get_api_usage_stats, get_api_call_details # <-- Import stats service and details function
 
 logger = get_routes_logger()
 
@@ -38,6 +38,7 @@ def setup_routers(app: FastAPI) -> None:
 
     # 添加健康检查路由
     setup_health_routes(app)
+    setup_api_stats_routes(app) # Add API stats routes
 
 
 def setup_page_routes(app: FastAPI) -> None:
@@ -158,3 +159,32 @@ def setup_health_routes(app: FastAPI) -> None:
         """健康检查端点"""
         logger.info("Health check endpoint called")
         return {"status": "healthy"}
+
+
+def setup_api_stats_routes(app: FastAPI) -> None:
+    """
+    设置 API 统计相关的路由
+
+    Args:
+        app: FastAPI应用程序实例
+    """
+    @app.get("/api/stats/details")
+    async def api_stats_details(request: Request, period: str):
+        """获取指定时间段内的 API 调用详情"""
+        try:
+            # 验证认证
+            auth_token = request.cookies.get("auth_token")
+            if not auth_token or not verify_auth_token(auth_token):
+                logger.warning("Unauthorized access attempt to API stats details")
+                # Returning JSON error instead of redirect for API endpoint
+                return {"error": "Unauthorized"}, 401
+
+            logger.info(f"Fetching API call details for period: {period}")
+            details = await get_api_call_details(period)
+            return details
+        except ValueError as e:
+            logger.warning(f"Invalid period requested for API stats details: {period} - {str(e)}")
+            return {"error": str(e)}, 400
+        except Exception as e:
+            logger.error(f"Error fetching API stats details for period {period}: {str(e)}")
+            return {"error": "Internal server error"}, 500

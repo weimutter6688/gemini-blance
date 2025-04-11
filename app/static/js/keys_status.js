@@ -460,6 +460,13 @@ document.addEventListener('DOMContentLoaded', () => {
         // 初始加载时应用一次筛选
         filterValidKeys();
     }
+
+    // 添加自动刷新功能，每60秒刷新一次
+    const autoRefreshInterval = 60000; // 60秒
+    setInterval(() => {
+        console.log('自动刷新 keys_status 页面...');
+        location.reload();
+    }, autoRefreshInterval);
 });
 
 // Service Worker registration
@@ -492,4 +499,118 @@ function toggleKeyVisibility(button) {
         eyeIcon.classList.add('fa-eye');
         button.title = '显示密钥';
     }
+}
+
+// --- API 调用详情模态框逻辑 ---
+
+// 显示 API 调用详情模态框
+async function showApiCallDetails(period) {
+    const modal = document.getElementById('apiCallDetailsModal');
+    const contentArea = document.getElementById('apiCallDetailsContent');
+    const titleElement = document.getElementById('apiCallDetailsModalTitle');
+
+    if (!modal || !contentArea || !titleElement) {
+        console.error('无法找到 API 调用详情模态框元素');
+        showNotification('无法显示详情，页面元素缺失', 'error');
+        return;
+    }
+
+    // 设置标题
+    let periodText = '';
+    switch (period) {
+        case '1m': periodText = '最近 1 分钟'; break;
+        case '1h': periodText = '最近 1 小时'; break;
+        case '24h': periodText = '最近 24 小时'; break;
+        default: periodText = '指定时间段';
+    }
+    titleElement.textContent = `${periodText} API 调用详情`;
+
+    // 显示模态框并设置加载状态
+    modal.classList.remove('hidden');
+    contentArea.innerHTML = `
+        <div class="text-center py-10">
+             <i class="fas fa-spinner fa-spin text-primary-600 text-3xl"></i>
+             <p class="text-gray-500 mt-2">加载中...</p>
+        </div>`;
+
+    try {
+        // 调用后端 API 获取数据
+        const response = await fetch(`/api/stats/details?period=${period}`);
+        if (!response.ok) {
+            throw new Error(`服务器错误: ${response.status}`);
+        }
+        const data = await response.json();
+
+        // 渲染数据
+        renderApiCallDetails(data, contentArea);
+
+    } catch (error) {
+        console.error('获取 API 调用详情失败:', error);
+        contentArea.innerHTML = `
+            <div class="text-center py-10 text-danger-500">
+                <i class="fas fa-exclamation-triangle text-3xl"></i>
+                <p class="mt-2">加载失败: ${error.message}</p>
+            </div>`;
+    }
+}
+
+// 关闭 API 调用详情模态框
+function closeApiCallDetailsModal() {
+    const modal = document.getElementById('apiCallDetailsModal');
+    if (modal) {
+        modal.classList.add('hidden');
+    }
+}
+
+// 渲染 API 调用详情到模态框
+function renderApiCallDetails(data, container) {
+    if (!data || data.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-10 text-gray-500">
+                <i class="fas fa-info-circle text-3xl"></i>
+                <p class="mt-2">该时间段内没有 API 调用记录。</p>
+            </div>`;
+        return;
+    }
+
+    // 创建表格
+    let tableHtml = `
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">时间</th>
+                    <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">密钥 (部分)</th>
+                    <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">模型</th>
+                    <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">状态</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+    `;
+
+    // 填充表格行
+    data.forEach(call => {
+        const timestamp = new Date(call.timestamp).toLocaleString();
+        const keyDisplay = call.key ? `${call.key.substring(0, 4)}...${call.key.substring(call.key.length - 4)}` : 'N/A';
+        const statusClass = call.status === 'success' ? 'text-success-600' : 'text-danger-600';
+        const statusIcon = call.status === 'success' ? 'fa-check-circle' : 'fa-times-circle';
+
+        tableHtml += `
+            <tr>
+                <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-700">${timestamp}</td>
+                <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500 font-mono">${keyDisplay}</td>
+                <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">${call.model || 'N/A'}</td>
+                <td class="px-4 py-2 whitespace-nowrap text-sm ${statusClass}">
+                    <i class="fas ${statusIcon} mr-1"></i>
+                    ${call.status}
+                </td>
+            </tr>
+        `;
+    });
+
+    tableHtml += `
+            </tbody>
+        </table>
+    `;
+
+    container.innerHTML = tableHtml;
 }
