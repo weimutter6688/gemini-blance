@@ -13,12 +13,9 @@ def verify_auth_token(token: str) -> bool:
 
 
 class SecurityService:
-    def __init__(self, allowed_tokens: list, auth_token: str):
-        self.allowed_tokens = allowed_tokens
-        self.auth_token = auth_token
 
     async def verify_key(self, key: str):
-        if key not in self.allowed_tokens and key != self.auth_token:
+        if key not in settings.ALLOWED_TOKENS and key != settings.AUTH_TOKEN:
             logger.error("Invalid key")
             raise HTTPException(status_code=401, detail="Invalid key")
         return key
@@ -37,7 +34,7 @@ class SecurityService:
             )
 
         token = authorization.replace("Bearer ", "")
-        if token not in self.allowed_tokens and token != self.auth_token:
+        if token not in settings.ALLOWED_TOKENS and token != settings.AUTH_TOKEN:
             logger.error("Invalid token")
             raise HTTPException(status_code=401, detail="Invalid token")
 
@@ -52,8 +49,8 @@ class SecurityService:
             raise HTTPException(status_code=401, detail="Missing x-goog-api-key header")
 
         if (
-            x_goog_api_key not in self.allowed_tokens
-            and x_goog_api_key != self.auth_token
+            x_goog_api_key not in settings.ALLOWED_TOKENS
+            and x_goog_api_key != settings.AUTH_TOKEN
         ):
             logger.error("Invalid x-goog-api-key")
             raise HTTPException(status_code=401, detail="Invalid x-goog-api-key")
@@ -67,7 +64,7 @@ class SecurityService:
             logger.error("Missing auth_token header")
             raise HTTPException(status_code=401, detail="Missing auth_token header")
         token = authorization.replace("Bearer ", "")
-        if token != self.auth_token:
+        if token != settings.AUTH_TOKEN:
             logger.error("Invalid auth_token")
             raise HTTPException(status_code=401, detail="Invalid auth_token")
 
@@ -78,7 +75,7 @@ class SecurityService:
     ) -> str:
         """验证URL中的key或请求头中的x-goog-api-key"""
         # 如果URL中的key有效，直接返回
-        if key in self.allowed_tokens or key == self.auth_token:
+        if key in settings.ALLOWED_TOKENS or key == settings.AUTH_TOKEN:
             return key
         
         # 否则检查请求头中的x-goog-api-key
@@ -86,7 +83,7 @@ class SecurityService:
             logger.error("Invalid key and missing x-goog-api-key header")
             raise HTTPException(status_code=401, detail="Invalid key and missing x-goog-api-key header")
         
-        if x_goog_api_key not in self.allowed_tokens and x_goog_api_key != self.auth_token:
+        if x_goog_api_key not in settings.ALLOWED_TOKENS and x_goog_api_key != settings.AUTH_TOKEN:
             logger.error("Invalid key and invalid x-goog-api-key")
             raise HTTPException(status_code=401, detail="Invalid key and invalid x-goog-api-key")
         

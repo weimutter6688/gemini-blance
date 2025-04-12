@@ -10,14 +10,8 @@ logger = get_model_logger()
 
 
 class ModelService:
-    def __init__(self, search_models: list, image_models: list):
-        self.search_models = search_models
-        self.image_models = image_models
-        self.base_url = settings.BASE_URL
-        self.filtered_models = settings.FILTERED_MODELS
-
     def get_gemini_models(self, api_key: str) -> Optional[Dict[str, Any]]:
-        url = f"{self.base_url}/models?key={api_key}"
+        url = f"{settings.BASE_URL}/models?key={api_key}"
 
         try:
             response = requests.get(url)
@@ -27,7 +21,7 @@ class ModelService:
                 filtered_models_list = []
                 for model in gemini_models.get("models", []):
                     model_id = model["name"].split("/")[-1]
-                    if model_id not in self.filtered_models:
+                    if model_id not in settings.FILTERED_MODELS:
                         filtered_models_list.append(model)
                     else:
                         logger.info(f"Filtered out model: {model_id}")
@@ -68,11 +62,11 @@ class ModelService:
             }
             openai_format["data"].append(openai_model)
 
-            if model_id in self.search_models:
+            if model_id in settings.SEARCH_MODELS:
                 search_model = openai_model.copy()
                 search_model["id"] = f"{model_id}-search"
                 openai_format["data"].append(search_model)
-            if model_id in self.image_models:
+            if model_id in settings.IMAGE_MODELS:
                 image_model = openai_model.copy()
                 image_model["id"] = f"{model_id}-image"
                 openai_format["data"].append(image_model)
@@ -90,9 +84,9 @@ class ModelService:
         model = model.strip()
         if model.endswith("-search"):
             model = model[:-7]
-            return model in self.search_models
+            return model in settings.SEARCH_MODELS
         if model.endswith("-image"):
             model = model[:-6]
-            return model in self.image_models
+            return model in settings.IMAGE_MODELS
 
-        return model not in self.filtered_models
+        return model not in settings.FILTERED_MODELS

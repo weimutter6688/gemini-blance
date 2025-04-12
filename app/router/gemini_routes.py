@@ -17,8 +17,8 @@ router_v1beta = APIRouter(prefix=f"/{API_VERSION}")
 logger = get_gemini_logger()
 
 # 初始化服务
-security_service = SecurityService(settings.ALLOWED_TOKENS, settings.AUTH_TOKEN)
-model_service = ModelService(settings.SEARCH_MODELS, settings.IMAGE_MODELS)
+security_service = SecurityService()
+model_service = ModelService()
 
 
 async def get_key_manager():

@@ -20,9 +20,9 @@ router = APIRouter()
 logger = get_openai_logger()
 
 # 初始化服务
-security_service = SecurityService(settings.ALLOWED_TOKENS, settings.AUTH_TOKEN)
-model_service = ModelService(settings.SEARCH_MODELS, settings.IMAGE_MODELS)
-embedding_service = EmbeddingService(settings.BASE_URL)
+security_service = SecurityService()
+model_service = ModelService()
+embedding_service = EmbeddingService()
 image_create_service = ImageCreateService()
 
 
