@@ -175,7 +175,15 @@ async def get_error_logs(
         List[Dict[str, Any]]: 错误日志列表
     """
     try:
-        query = select(ErrorLog)
+        query = select(
+            ErrorLog.id,
+            ErrorLog.gemini_key,
+            ErrorLog.model_name,
+            ErrorLog.error_type,
+            ErrorLog.error_log,
+            ErrorLog.error_code,
+            ErrorLog.request_time
+        )
         
         # Apply filters
         if key_search:
@@ -192,7 +200,7 @@ async def get_error_logs(
             query = query.where(ErrorLog.request_time < end_date)
 
         # Apply ordering, limit, and offset
-        query = query.order_by(ErrorLog.request_time.desc()).limit(limit).offset(offset)
+        query = query.order_by(ErrorLog.id.desc()).limit(limit).offset(offset)
         
         result = await database.fetch_all(query)
         return [dict(row) for row in result]
@@ -240,6 +248,37 @@ async def get_error_logs_count(
         return count_result[0] if count_result else 0
     except Exception as e:
         logger.exception(f"Failed to count error logs with filters: {str(e)}") # Use exception for stack trace
+        raise
+
+
+# 新增函数：获取单条错误日志详情
+async def get_error_log_details(log_id: int) -> Optional[Dict[str, Any]]:
+    """
+    根据 ID 获取单个错误日志的详细信息
+
+    Args:
+        log_id (int): 错误日志的 ID
+
+    Returns:
+        Optional[Dict[str, Any]]: 包含日志详细信息的字典，如果未找到则返回 None
+    """
+    try:
+        query = select(ErrorLog).where(ErrorLog.id == log_id)
+        result = await database.fetch_one(query)
+        if result:
+            # 将 request_msg (JSONB) 转换为字符串以便在 API 中返回
+            log_dict = dict(result)
+            if 'request_msg' in log_dict and log_dict['request_msg'] is not None:
+                # 确保即使是 None 或非 JSON 数据也能处理
+                try:
+                    log_dict['request_msg'] = json.dumps(log_dict['request_msg'], ensure_ascii=False, indent=2)
+                except TypeError:
+                    log_dict['request_msg'] = str(log_dict['request_msg']) # Fallback to string
+            return log_dict
+        else:
+            return None
+    except Exception as e:
+        logger.exception(f"Failed to get error log details for ID {log_id}: {str(e)}")
         raise
 
 # 新增函数：添加请求日志

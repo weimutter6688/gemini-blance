@@ -246,18 +246,13 @@ async function loadErrorLogs() {
             throw new Error(errorData?.detail || `网络响应异常: ${response.statusText}`);
         }
         const data = await response.json();
-        // Assuming the API returns an object like { logs: [], total: count }
-        // If it only returns an array, we can't get the total count accurately for pagination
-        if (Array.isArray(data)) {
-            errorLogs = data;
-            renderErrorLogs(errorLogs); // Pass data directly
-            updatePagination(errorLogs.length, -1); // Indicate unknown total
-        } else if (data && Array.isArray(data.logs)) {
-            errorLogs = data.logs;
-            renderErrorLogs(errorLogs); // Pass logs array
-            updatePagination(errorLogs.length, data.total || -1); // Pass total count if available
+        // API 现在返回 { logs: [], total: count }
+        if (data && Array.isArray(data.logs)) {
+            errorLogs = data.logs; // Store the list data (contains error_code)
+            renderErrorLogs(errorLogs);
+            updatePagination(errorLogs.length, data.total || -1);
         } else {
-             throw new Error('无法识别的API响应格式');
+            throw new Error('无法识别的API响应格式');
         }
 
 
@@ -302,8 +297,8 @@ function renderErrorLogs(logs) {
         } catch (e) { console.error("Error formatting date:", e); }
 
 
-        // Truncate error log content for display
-        const errorLogContent = log.error_log ? log.error_log.substring(0, 100) + (log.error_log.length > 100 ? '...' : '') : '无';
+        // Display error code instead of truncated log
+        const errorCodeContent = log.error_code || '无';
 
         // Mask the Gemini key for display in the table
         const maskKey = (key) => {
@@ -316,7 +311,7 @@ function renderErrorLogs(logs) {
             <td>${sequentialId}</td> <!-- Use sequential ID -->
             <td title="${log.gemini_key || ''}">${maskedKey}</td>
             <td>${log.error_type || '未知'}</td>
-            <td class="error-log-content" title="${log.error_log || ''}">${errorLogContent}</td>
+            <td class="error-code-content" title="${log.error_code || ''}">${errorCodeContent}</td>
             <td>${log.model_name || '未知'}</td>
             <td>${formattedTime}</td>
             <td>
@@ -338,57 +333,88 @@ function renderErrorLogs(logs) {
     });
 }
 
-// 显示错误日志详情 (Custom Modal Logic)
-function showLogDetails(logId) {
-    const log = errorLogs.find(l => l.id === logId);
-    if (!log || !logDetailModal) return;
+// 显示错误日志详情 (从 API 获取)
+async function showLogDetails(logId) {
+    if (!logDetailModal) return;
 
-    // Format date
-     let formattedTime = 'N/A';
-     try {
-         const requestTime = new Date(log.request_time);
-         if (!isNaN(requestTime)) {
-              formattedTime = requestTime.toLocaleString('zh-CN', {
-                 year: 'numeric', month: '2-digit', day: '2-digit',
-                 hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
-             });
-         }
-     } catch (e) { console.error("Error formatting date:", e); }
+    // Show loading state in modal (optional)
+    // Clear previous content and show a spinner or message
+    document.getElementById('modalGeminiKey').textContent = '加载中...';
+    document.getElementById('modalErrorType').textContent = '加载中...';
+    document.getElementById('modalErrorLog').textContent = '加载中...';
+    document.getElementById('modalRequestMsg').textContent = '加载中...';
+    document.getElementById('modalModelName').textContent = '加载中...';
+    document.getElementById('modalRequestTime').textContent = '加载中...';
 
-
-    // Format request message (handle potential JSON)
-    let formattedRequestMsg = '无';
-    if (log.request_msg) {
-        try {
-            // Check if it's already an object/array
-            if (typeof log.request_msg === 'object' && log.request_msg !== null) {
-                 formattedRequestMsg = JSON.stringify(log.request_msg, null, 2);
-            }
-            // Check if it's a JSON string
-            else if (typeof log.request_msg === 'string' && log.request_msg.trim().startsWith('{') || log.request_msg.trim().startsWith('[')) {
-                formattedRequestMsg = JSON.stringify(JSON.parse(log.request_msg), null, 2);
-            }
-             else {
-                formattedRequestMsg = String(log.request_msg);
-            }
-        } catch (e) {
-            formattedRequestMsg = String(log.request_msg); // Fallback to string
-            console.warn("Could not parse request_msg as JSON:", e);
-        }
-    }
-
-    // Populate modal content (show full key in modal)
-    document.getElementById('modalGeminiKey').textContent = log.gemini_key || '无';
-    document.getElementById('modalErrorType').textContent = log.error_type || '未知';
-    document.getElementById('modalErrorLog').textContent = log.error_log || '无';
-    document.getElementById('modalRequestMsg').textContent = formattedRequestMsg;
-    document.getElementById('modalModelName').textContent = log.model_name || '未知';
-    document.getElementById('modalRequestTime').textContent = formattedTime;
-
-    // Show the modal
     logDetailModal.classList.add('show');
-    // Optional: Prevent body scrolling when modal is open
-    document.body.style.overflow = 'hidden';
+    document.body.style.overflow = 'hidden'; // Prevent body scrolling
+
+    try {
+        const response = await fetch(`/api/logs/errors/${logId}/details`);
+        if (!response.ok) {
+            let errorData;
+            try {
+                errorData = await response.json();
+            } catch (e) { /* ignore */ }
+            throw new Error(errorData?.detail || `获取日志详情失败: ${response.statusText}`);
+        }
+        const logDetails = await response.json();
+
+        // Format date
+        let formattedTime = 'N/A';
+        try {
+            const requestTime = new Date(logDetails.request_time);
+            if (!isNaN(requestTime)) {
+                formattedTime = requestTime.toLocaleString('zh-CN', {
+                    year: 'numeric', month: '2-digit', day: '2-digit',
+                    hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
+                });
+            }
+        } catch (e) { console.error("Error formatting date:", e); }
+
+        // Format request message (handle potential JSON)
+        let formattedRequestMsg = '无';
+        if (logDetails.request_msg) {
+            try {
+                if (typeof logDetails.request_msg === 'object' && logDetails.request_msg !== null) {
+                    formattedRequestMsg = JSON.stringify(logDetails.request_msg, null, 2);
+                } else if (typeof logDetails.request_msg === 'string') {
+                    // Try parsing if it looks like JSON, otherwise display as string
+                    const trimmedMsg = logDetails.request_msg.trim();
+                    if (trimmedMsg.startsWith('{') || trimmedMsg.startsWith('[')) {
+                        formattedRequestMsg = JSON.stringify(JSON.parse(logDetails.request_msg), null, 2);
+                    } else {
+                        formattedRequestMsg = logDetails.request_msg;
+                    }
+                } else {
+                     formattedRequestMsg = String(logDetails.request_msg);
+                }
+            } catch (e) {
+                formattedRequestMsg = String(logDetails.request_msg); // Fallback
+                console.warn("Could not parse request_msg as JSON:", e);
+            }
+        }
+
+        // Populate modal content with fetched details
+        document.getElementById('modalGeminiKey').textContent = logDetails.gemini_key || '无';
+        document.getElementById('modalErrorType').textContent = logDetails.error_type || '未知';
+        document.getElementById('modalErrorLog').textContent = logDetails.error_log || '无'; // Full error log
+        document.getElementById('modalRequestMsg').textContent = formattedRequestMsg; // Full request message
+        document.getElementById('modalModelName').textContent = logDetails.model_name || '未知';
+        document.getElementById('modalRequestTime').textContent = formattedTime;
+
+    } catch (error) {
+        console.error('获取日志详情失败:', error);
+        // Show error in modal
+        document.getElementById('modalGeminiKey').textContent = '错误';
+        document.getElementById('modalErrorType').textContent = '错误';
+        document.getElementById('modalErrorLog').textContent = `加载失败: ${error.message}`;
+        document.getElementById('modalRequestMsg').textContent = '错误';
+        document.getElementById('modalModelName').textContent = '错误';
+        document.getElementById('modalRequestTime').textContent = '错误';
+        // Optionally show a notification
+        showNotification(`加载日志详情失败: ${error.message}`, 'error', 5000);
+    }
 }
 
 // Close Log Detail Modal
