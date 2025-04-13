@@ -201,13 +201,12 @@ app/
 
 感谢所有为本项目做出贡献的开发者！
 
-<a href="https://github.com/toddyoe" title="toddyoe"><img src="https://avatars.githubusercontent.com/u/167494546?s=64&v=4" width="64" height="64"></a>
-<a href="https://github.com/yangtb2024" title="yangtb2024"><img src="https://avatars.githubusercontent.com/u/164613316?s=64&v=4" width="64" height="64"></a>
-<a href="https://github.com/cr-zhichen" title="cr-zhichen"><img src="https://avatars.githubusercontent.com/u/57337795?s=64&v=4" width="64" height="64"></a>
-<a href="https://github.com/BetterAndBetterII" title="BetterAndBetterII"><img src="https://avatars.githubusercontent.com/u/141388234?s=96&v=4" width="64" height="64"></a>
-<a href="https://github.com/yanhao98" title="yanhao98"><img src="https://avatars.githubusercontent.com/u/37316281?s=64&v=4" width="64" height="64"></a>
-<a href="https://github.com/Haoyu99" title="Haoyu99"><img src="https://avatars.githubusercontent.com/u/93185981?s=60&v=4" width="64" height="64"></a>
+[![Contributors](https://contrib.rocks/image?repo=snailyp/gemini-balance)](https://github.com/snailyp/gemini-balance/graphs/contributors)
 
-## 📄 许可证
+## 💖 友情项目
+
+* **[OneLine](https://github.com/chengtx809/OneLine)** by [chengtx809](https://github.com/chengtx809) - OneLine一线：AI驱动的热点事件时间轴生成工具
+
+## 许可证
 
 本项目采用 MIT 许可证。
