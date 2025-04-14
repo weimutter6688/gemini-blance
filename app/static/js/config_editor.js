@@ -57,6 +57,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const confirmAddApiKeyBtn = document.getElementById('confirmAddApiKeyBtn');
     const apiKeyBulkInput = document.getElementById('apiKeyBulkInput');
     const apiKeySearchInput = document.getElementById('apiKeySearchInput');
+    const bulkDeleteApiKeyBtn = document.getElementById('bulkDeleteApiKeyBtn'); // 新增
+    const bulkDeleteApiKeyModal = document.getElementById('bulkDeleteApiKeyModal'); // 新增
+    const closeBulkDeleteModalBtn = document.getElementById('closeBulkDeleteModalBtn'); // 新增
+    const cancelBulkDeleteApiKeyBtn = document.getElementById('cancelBulkDeleteApiKeyBtn'); // 新增
+    const confirmBulkDeleteApiKeyBtn = document.getElementById('confirmBulkDeleteApiKeyBtn'); // 新增
+    const bulkDeleteApiKeyInput = document.getElementById('bulkDeleteApiKeyInput'); // 新增
 
     // --- 新增：重置确认模态框相关 ---
     const resetConfirmModal = document.getElementById('resetConfirmModal');
@@ -99,8 +105,11 @@ document.addEventListener('DOMContentLoaded', function() {
         if (event.target == apiKeyModal) {
             apiKeyModal.classList.remove('show');
         }
-        if (event.target == resetConfirmModal) { // 新增对重置模态框的处理
+        if (event.target == resetConfirmModal) {
             resetConfirmModal.classList.remove('show');
+        }
+        if (event.target == bulkDeleteApiKeyModal) { // 新增对批量删除模态框的处理
+            bulkDeleteApiKeyModal.classList.remove('show');
         }
     });
 
@@ -113,6 +122,41 @@ document.addEventListener('DOMContentLoaded', function() {
     if (apiKeySearchInput) {
         apiKeySearchInput.addEventListener('input', handleApiKeySearch);
     }
+
+    // --- 新增：批量删除 API Key 相关事件 ---
+    // 打开批量删除模态框
+    if (bulkDeleteApiKeyBtn) {
+        bulkDeleteApiKeyBtn.addEventListener('click', () => {
+            if (bulkDeleteApiKeyModal) {
+                bulkDeleteApiKeyModal.classList.add('show');
+            }
+            if (bulkDeleteApiKeyInput) bulkDeleteApiKeyInput.value = ''; // 清空输入框
+        });
+    }
+
+    // 关闭批量删除模态框 (X 按钮)
+    if (closeBulkDeleteModalBtn) {
+        closeBulkDeleteModalBtn.addEventListener('click', () => {
+            if (bulkDeleteApiKeyModal) {
+                bulkDeleteApiKeyModal.classList.remove('show');
+            }
+        });
+    }
+
+    // 关闭批量删除模态框 (取消按钮)
+    if (cancelBulkDeleteApiKeyBtn) {
+        cancelBulkDeleteApiKeyBtn.addEventListener('click', () => {
+            if (bulkDeleteApiKeyModal) {
+                bulkDeleteApiKeyModal.classList.remove('show');
+            }
+        });
+    }
+
+    // 确认批量删除 API Key
+    if (confirmBulkDeleteApiKeyBtn) {
+        confirmBulkDeleteApiKeyBtn.addEventListener('click', handleBulkDeleteApiKeys);
+    }
+    // --- 结束：批量删除 API Key 相关 ---
     // --- 结束：API Key 相关 ---
 
     // --- 新增：重置确认模态框事件监听 (移到 DOMContentLoaded 内部) ---
@@ -140,6 +184,8 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     // --- 结束：重置相关 ---
+
+    // 移除了静态生成令牌按钮的事件监听器，现在按钮是动态生成的
 
 }); // <-- DOMContentLoaded 结束括号
 
@@ -304,6 +350,58 @@ function handleApiKeySearch() {
     });
 }
 
+// --- 新增：处理批量删除 API Key 的逻辑 ---
+function handleBulkDeleteApiKeys() {
+    const bulkDeleteTextarea = document.getElementById('bulkDeleteApiKeyInput'); // Use the textarea ID
+    const apiKeyContainer = document.getElementById('API_KEYS_container');
+    const bulkDeleteModal = document.getElementById('bulkDeleteApiKeyModal');
+
+    if (!bulkDeleteTextarea || !apiKeyContainer || !bulkDeleteModal) return;
+
+    const bulkText = bulkDeleteTextarea.value;
+    if (!bulkText.trim()) {
+        showNotification('请粘贴需要删除的 API 密钥', 'warning');
+        return;
+    }
+
+    // Use the same regex as for adding keys to extract keys to delete
+    const keyRegex = /AIzaSy\S{33}/g;
+    const keysToDelete = new Set(bulkText.match(keyRegex) || []); // Create a Set for efficient lookup
+
+    if (keysToDelete.size === 0) {
+        showNotification('未在输入内容中提取到有效的 API 密钥格式', 'warning');
+        // Optionally clear the textarea or keep it as is
+        // bulkDeleteTextarea.value = '';
+        return;
+    }
+
+    const keyItems = apiKeyContainer.querySelectorAll('.array-item');
+    let deleteCount = 0;
+
+    keyItems.forEach(item => {
+        const input = item.querySelector('.array-input');
+        // Check if the input exists and its value is in the set of keys to delete
+        if (input && keysToDelete.has(input.value)) {
+            item.remove(); // Remove the entire array item element
+            deleteCount++;
+        }
+    });
+
+    // Close the modal
+    bulkDeleteModal.classList.remove('show');
+
+    // Provide feedback
+    if (deleteCount > 0) {
+        showNotification(`成功删除了 ${deleteCount} 个匹配的密钥`, 'success');
+    } else {
+        // This message implies keys were extracted but not found in the current list
+        showNotification('列表中未找到您输入的任何密钥进行删除', 'info');
+    }
+
+    // Clear the textarea after processing
+    bulkDeleteTextarea.value = '';
+}
+
 // 切换标签
 function switchTab(tabId) {
     // 更新标签按钮状态
@@ -358,29 +456,58 @@ function addArrayItemWithValue(key, value) {
     if (!container) return;
     
     const arrayItem = document.createElement('div');
-    arrayItem.className = 'array-item flex justify-between items-center mb-2'; // 使用 Flexbox 布局，垂直居中，底部增加间距
-    
+    // 主容器使用 Flexbox
+    arrayItem.className = 'array-item flex items-center mb-2 gap-2'; // 添加 gap-2 来分隔元素
+
+    // 创建一个包装器 div 来包含输入框和生成按钮
+    const inputWrapper = document.createElement('div');
+    // 这个包装器占据主要空间，并使用 Flexbox
+    inputWrapper.className = 'flex items-center flex-grow border border-gray-300 rounded-md focus-within:border-primary-500 focus-within:ring focus-within:ring-primary-200 focus-within:ring-opacity-50';
+
     const input = document.createElement('input');
     input.type = 'text';
     input.name = `${key}[]`;
     input.value = value;
-    input.className = 'array-input flex-grow px-3 py-2 rounded-md border border-gray-300 focus:border-primary-500 focus:ring focus:ring-primary-200 focus:ring-opacity-50 mr-2'; // 输入框占据大部分空间，添加样式和右边距
-    
+    // 输入框占据包装器内的主要空间，移除边框和圆角，因为包装器已有
+    input.className = 'array-input flex-grow px-3 py-2 border-none rounded-l-md focus:outline-none'; // 移除右侧圆角
+
+    inputWrapper.appendChild(input); // 将输入框添加到包装器
+
+    // 只为 ALLOWED_TOKENS 添加生成按钮
+    if (key === 'ALLOWED_TOKENS') {
+        const generateBtn = document.createElement('button');
+        generateBtn.type = 'button';
+        // 按钮样式，放在输入框右侧，有背景和内边距，调整颜色
+        generateBtn.className = 'generate-btn px-2 py-2 text-gray-500 hover:text-primary-600 focus:outline-none rounded-r-md bg-gray-100 hover:bg-gray-200 transition-colors'; // 添加背景和右侧圆角
+        generateBtn.innerHTML = '<i class="fas fa-dice"></i>';
+        generateBtn.title = '生成随机令牌';
+        generateBtn.addEventListener('click', function() {
+            const newToken = generateRandomToken();
+            input.value = newToken;
+            showNotification('已生成新令牌', 'success');
+        });
+        inputWrapper.appendChild(generateBtn); // 将生成按钮添加到包装器
+    } else {
+        // 如果不是 ALLOWED_TOKENS，确保输入框有右侧圆角
+        input.classList.add('rounded-r-md');
+    }
+
     const removeBtn = document.createElement('button');
     removeBtn.type = 'button';
-    removeBtn.className = 'remove-btn text-gray-400 hover:text-red-500 focus:outline-none transition-colors duration-150 ml-2'; // 新的 Tailwind 样式
-    removeBtn.innerHTML = '<i class="fas fa-trash-alt"></i>'; // 改用垃圾桶图标
-    removeBtn.title = '删除'; // 添加悬停提示
+    // 删除按钮样式，保持不变
+    removeBtn.className = 'remove-btn text-gray-400 hover:text-red-500 focus:outline-none transition-colors duration-150';
+    removeBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
+    removeBtn.title = '删除';
     removeBtn.addEventListener('click', function() {
         arrayItem.remove();
     });
-    
-    arrayItem.appendChild(input);
+
+    // 将包装器（包含输入框和可能的生成按钮）和删除按钮添加到主容器
+    arrayItem.appendChild(inputWrapper);
     arrayItem.appendChild(removeBtn);
-    
-    // 插入到添加按钮之前
-    const controls = container.querySelector('.array-controls');
-    container.insertBefore(arrayItem, controls);
+
+    // 插入到容器末尾
+    container.appendChild(arrayItem);
 }
 
 // 收集表单数据
@@ -605,3 +732,16 @@ function toggleScrollButtons() {
         scrollButtons.style.display = 'none';
     }
 }
+
+// --- 新增：生成随机令牌函数 ---
+function generateRandomToken() {
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_';
+    const length = 48;
+    let result = 'sk-';
+    const charactersLength = characters.length;
+    for (let i = 0; i < length; i++) {
+        result += characters.charAt(Math.floor(Math.random() * charactersLength));
+    }
+    return result;
+}
+// --- 结束：生成随机令牌函数 ---
