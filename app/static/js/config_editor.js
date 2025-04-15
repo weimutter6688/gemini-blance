@@ -187,6 +187,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 移除了静态生成令牌按钮的事件监听器，现在按钮是动态生成的
 
+    // 认证令牌生成按钮事件绑定
+    const generateAuthTokenBtn = document.getElementById('generateAuthTokenBtn');
+    const authTokenInput = document.getElementById('AUTH_TOKEN');
+    if (generateAuthTokenBtn && authTokenInput) {
+        generateAuthTokenBtn.addEventListener('click', function() {
+            const newToken = generateRandomToken();
+            authTokenInput.value = newToken;
+            showNotification('已生成新认证令牌', 'success');
+        });
+    }
 }); // <-- DOMContentLoaded 结束括号
 
 // 初始化配置
