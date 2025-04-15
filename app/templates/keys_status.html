@@ -198,6 +198,16 @@
             font-size: 0.625rem;
         }
     }
+    /* Tailwind Toggle Switch Helper CSS from config_editor.html */
+    .toggle-checkbox:checked {
+        @apply: right-0 border-primary-600;
+        right: 0;
+        border-color: #4F46E5;
+    }
+    .toggle-checkbox:checked + .toggle-label {
+        @apply: bg-primary-600;
+        background-color: #4F46E5;
+    }
 
 </style>
 {% endblock %}
@@ -210,9 +220,20 @@
 {% block content %}
     <div class="container max-w-6xl mx-auto px-4"> <!-- Increased max-width -->
         <div class="glass-card rounded-2xl shadow-xl p-6 md:p-8">
-            <button class="absolute top-6 right-6 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-full w-8 h-8 flex items-center justify-center text-primary-600 transition-all duration-300" onclick="refreshPage(this)">
-                <i class="fas fa-sync-alt"></i>
-            </button>
+            <div class="absolute top-6 right-6 flex items-center gap-3">
+                <!-- 自动刷新开关 -->
+                <div class="flex items-center text-sm text-gray-600 select-none">
+                    <span class="mr-2">自动刷新</span>
+                    <div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
+                        <input type="checkbox" name="autoRefreshToggle" id="autoRefreshToggle" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer"/>
+                        <label for="autoRefreshToggle" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer"></label>
+                    </div>
+                </div>
+                <!-- 手动刷新按钮 -->
+                <button class="bg-white bg-opacity-20 hover:bg-opacity-30 rounded-full w-8 h-8 flex items-center justify-center text-primary-600 transition-all duration-300" onclick="refreshPage(this)" title="手动刷新">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+            </div>
 
             <h1 class="text-3xl font-extrabold text-center text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-primary-700 mb-4">
                  <img src="/static/icons/logo.png" alt="Gemini Balance Logo" class="h-9 inline-block align-middle mr-2">
@@ -300,10 +321,14 @@
                         <h2 class="text-lg font-semibold">有效密钥列表 ({{ valid_key_count }})</h2>
                         <div class="flex items-center gap-2 ml-4">
                             <label for="failCountThreshold" class="text-sm text-gray-600 select-none">失败次数≥</label>
-                            <input type="number" id="failCountThreshold" value="0" min="0" class="form-input h-7 w-16 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-primary-500 focus:border-primary-500">
+                            <input type="number" id="failCountThreshold" value="0" min="0" class="form-input h-7 w-16 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-primary-500 focus:border-primary-500" onclick="event.stopPropagation();">
                         </div>
                     </div>
                     <div class="flex gap-2">
+                         <button class="flex items-center gap-2 bg-teal-500 hover:bg-teal-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200" onclick="event.stopPropagation(); showVerifyModal('valid', event)"> <!-- 新增批量验证按钮 -->
+                            <i class="fas fa-check-double"></i>
+                            批量验证
+                        </button>
                         <button class="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200" onclick="event.stopPropagation(); resetAllKeysFailCount('valid', event)" data-reset-type="valid">
                             <i class="fas fa-redo-alt"></i>
                             批量重置
@@ -369,6 +394,10 @@
                         <h2 class="text-lg font-semibold">无效密钥列表 ({{ invalid_key_count }})</h2>
                     </div>
                     <div class="flex gap-2">
+                         <button class="flex items-center gap-2 bg-teal-500 hover:bg-teal-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200" onclick="event.stopPropagation(); showVerifyModal('invalid', event)"> <!-- 新增批量验证按钮 -->
+                            <i class="fas fa-check-double"></i>
+                            批量验证
+                        </button>
                         <button class="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200" onclick="event.stopPropagation(); resetAllKeysFailCount('invalid', event)" data-reset-type="invalid">
                             <i class="fas fa-redo-alt"></i>
                             批量重置
@@ -463,22 +492,49 @@
             </div>
         </div>
     </div>
-    
-    <!-- 操作结果模态框 -->
-    <div id="resultModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <!-- 验证确认模态框移到 resetModal 外部，避免嵌套导致显示异常 -->
+    <div id="verifyModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
         <div class="bg-white rounded-lg p-6 shadow-xl max-w-md w-full animate-fade-in">
             <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-semibold text-gray-800" id="resultModalTitle">操作结果</h3>
-                <button onclick="closeResultModal()" class="text-gray-500 hover:text-gray-700 focus:outline-none">
+                <h3 class="text-lg font-semibold text-gray-800" id="verifyModalTitle">批量验证密钥</h3>
+                <button onclick="closeVerifyModal()" class="text-gray-500 hover:text-gray-700 focus:outline-none">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            <div class="mb-6 text-center">
-                <div id="resultIcon" class="text-5xl mb-3"></div>
-                <p class="text-gray-600" id="resultModalMessage"></p>
+            <div class="mb-6">
+                <p class="text-gray-600" id="verifyModalMessage"></p>
             </div>
-            <div class="flex justify-center">
-                <button id="resultModalConfirmBtn" onclick="closeResultModal()" class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors">
+            <div class="flex justify-end gap-3">
+                <button onclick="closeVerifyModal()" class="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-lg transition-colors">
+                    取消
+                </button>
+                <button id="confirmVerifyBtn" class="px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-lg transition-colors">
+                    确认验证
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 操作结果模态框 -->
+    <div id="resultModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-2xl p-0 shadow-2xl max-w-lg w-full animate-fade-in border border-gray-200">
+            <div class="flex items-center justify-between px-6 pt-6 pb-2 border-b">
+                <h3 class="text-xl font-bold text-gray-800 text-center w-full" id="resultModalTitle" style="letter-spacing:0.05em;">操作结果</h3>
+                <button onclick="closeResultModal()" class="absolute right-6 top-6 text-gray-400 hover:text-gray-700 focus:outline-none text-2xl">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="flex flex-col items-center px-8 pt-6 pb-2">
+                <div id="resultIcon" class="text-6xl mb-3"></div>
+            </div>
+            <div class="px-8 pb-2 w-full">
+                <div id="resultModalMessage"
+                     class="text-gray-700 text-base leading-relaxed break-all whitespace-pre-line max-h-60 overflow-y-auto border border-gray-100 rounded-lg bg-gray-50 p-4 shadow-inner"
+                     style="font-family: 'JetBrains Mono', 'Fira Mono', 'Consolas', 'monospace';">
+                </div>
+            </div>
+            <div class="flex justify-center px-8 pb-6 pt-2">
+                <button id="resultModalConfirmBtn" onclick="closeResultModal()" class="px-6 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-semibold text-base shadow transition-colors">
                     确定
                 </button>
             </div>

@@ -52,18 +52,20 @@ function initStatItemAnimations() {
 }
 
 function copyKeys(type) {
-    const keys = Array.from(document.querySelectorAll(`#${type}Keys .key-text`)).map(span => span.dataset.fullKey);
-    
+    // 选择对应区域内所有可见的 li 元素下的 key-text span
+    const visibleKeyItems = document.querySelectorAll(`#${type}Keys li:not([style*="display: none"]) .key-text`);
+    const keys = Array.from(visibleKeyItems).map(span => span.dataset.fullKey);
+
     if (keys.length === 0) {
-        showNotification('没有可复制的密钥', 'error');
+        showNotification('没有可复制的筛选后密钥', 'warning'); // 修改提示信息
         return;
     }
-    
+
     const keysText = keys.join('\n');
-    
+
     copyToClipboard(keysText)
         .then(() => {
-            showNotification(`已成功复制${keys.length}个${type === 'valid' ? '有效' : '无效'}密钥`);
+            showNotification(`已成功复制 ${keys.length} 个筛选后的${type === 'valid' ? '有效' : '无效'}密钥`); // 修改提示信息
         })
         .catch((err) => {
             console.error('无法复制文本: ', err);
@@ -186,14 +188,35 @@ function showResetModal(type) {
     const titleElement = document.getElementById('resetModalTitle');
     const messageElement = document.getElementById('resetModalMessage');
     const confirmButton = document.getElementById('confirmResetBtn');
-    
+
+    // 获取当前筛选后可见的、且包含 data-fail-count 属性的密钥数量
+    // 根据密钥类型选择合适的选择器
+    let keySelector;
+    if (type === 'valid') {
+        // 对于有效密钥，可能需要基于失败次数筛选，保留 data-fail-count (虽然批量重置通常不需要筛选)
+        // 如果批量重置有效密钥也应重置所有可见的，可以将此行改为下面 else 中的选择器
+        keySelector = `#${type}Keys li[data-fail-count]:not([style*="display: none"])`;
+    } else {
+        // 对于无效密钥，我们想要重置所有可见的无效密钥，不依赖 data-fail-count
+        keySelector = `#${type}Keys li:not([style*="display: none"])`;
+    }
+    const visibleKeyItems = document.querySelectorAll(keySelector);
+    const count = visibleKeyItems.length;
+
     // 设置标题和消息
     titleElement.textContent = '批量重置失败次数';
-    messageElement.textContent = `确定要批量重置${type === 'valid' ? '有效' : '无效'}密钥的失败次数吗？`;
-    
+    if (count > 0) {
+        messageElement.textContent = `确定要批量重置筛选出的 ${count} 个${type === 'valid' ? '有效' : '无效'}密钥的失败次数吗？`;
+        confirmButton.disabled = false; // 确保按钮可用
+    } else {
+        messageElement.textContent = `当前没有筛选出可重置的${type === 'valid' ? '有效' : '无效'}密钥。`;
+        confirmButton.disabled = true; // 没有可重置的密钥时禁用确认按钮
+    }
+
+
     // 设置确认按钮事件
     confirmButton.onclick = () => executeResetAll(type);
-    
+
     // 显示模态框
     modalElement.classList.remove('hidden');
 }
@@ -243,7 +266,17 @@ function showResultModal(success, message, autoReload = true) {
     }
     
     // 设置消息
-    messageElement.textContent = message;
+    // 支持长文本和换行，内容插入到div而不是p
+    if (typeof message === 'string') {
+        // 如果内容包含换行或长文本，自动转为可滚动
+        messageElement.textContent = '';
+        messageElement.innerText = message;
+    } else if (message instanceof Node) {
+        messageElement.innerHTML = '';
+        messageElement.appendChild(message);
+    } else {
+        messageElement.textContent = String(message);
+    }
     
     // 设置确认按钮点击事件
     confirmButton.onclick = () => closeResultModal(autoReload);
@@ -256,54 +289,75 @@ async function executeResetAll(type) {
     try {
         // 关闭确认模态框
         closeResetModal();
-        
-        // 使用data-reset-type属性直接找到对应的重置按钮
+
+        // 找到对应的重置按钮以显示加载状态
         const resetButton = document.querySelector(`button[data-reset-type="${type}"]`);
-        
         if (!resetButton) {
-            // 如果找不到按钮，显示错误并返回
             showResultModal(false, `找不到${type === 'valid' ? '有效' : '无效'}密钥区域的批量重置按钮`);
             return;
         }
-        
+
+        // 获取筛选后可见的密钥
+        const visibleKeyItems = document.querySelectorAll(`#${type}Keys li:not([style*="display: none"]) .key-text`);
+        const keysToReset = Array.from(visibleKeyItems).map(span => span.dataset.fullKey);
+
+        if (keysToReset.length === 0) {
+            showNotification(`没有需要重置的筛选后${type === 'valid' ? '有效' : '无效'}密钥`, 'warning');
+            return;
+        }
+
         // 禁用按钮并显示加载状态
         resetButton.disabled = true;
         const originalHtml = resetButton.innerHTML;
         resetButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 重置中';
 
         try {
-            // 调用API，传递类型参数
-            const response = await fetch(`/gemini/v1beta/reset-all-fail-counts?key_type=${type}`, {
-                method: 'POST'
+            // 调用新的后端 API 来重置选定的密钥
+            const response = await fetch(`/gemini/v1beta/reset-selected-fail-counts`, { // 假设的新 API 端点
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ keys: keysToReset, key_type: type }) // 发送密钥列表和类型
             });
-            
+
             if (!response.ok) {
-                throw new Error(`服务器返回错误: ${response.status}`);
+                 // 尝试解析错误信息
+                 let errorMsg = `服务器返回错误: ${response.status}`;
+                 try {
+                     const errorData = await response.json();
+                     errorMsg = errorData.message || errorMsg;
+                 } catch (e) {
+                     // 如果解析失败，使用原始错误信息
+                 }
+                 
+                 throw new Error(errorMsg);
             }
-            
+
             const data = await response.json();
 
             // 根据重置结果显示模态框
             if (data.success) {
-                const message = data.reset_count ?
-                    `成功重置${data.reset_count}个${type === 'valid' ? '有效' : '无效'}密钥的失败次数` :
-                    '所有失败次数重置成功';
-                showResultModal(true, message);
+                const message = data.reset_count !== undefined ? // 检查 reset_count 是否存在
+                    `成功重置 ${data.reset_count} 个筛选后的${type === 'valid' ? '有效' : '无效'}密钥的失败次数` :
+                    `成功重置 ${keysToReset.length} 个筛选后的密钥`; // 如果后端没返回数量，使用前端计算的数量
+                showResultModal(true, message); // 成功后刷新页面
             } else {
                 const errorMsg = data.message || '批量重置失败';
-                showResultModal(false, '批量重置失败: ' + errorMsg);
+                // 失败后不自动刷新页面，让用户看到错误信息
+                showResultModal(false, '批量重置失败: ' + errorMsg, false);
             }
         } catch (fetchError) {
             console.error('API请求失败:', fetchError);
-            showResultModal(false, '批量重置请求失败: ' + fetchError.message);
+            showResultModal(false, '批量重置请求失败: ' + fetchError.message, false); // 失败后不自动刷新
         } finally {
-            // 立即恢复按钮状态
+            // 恢复按钮状态
              resetButton.innerHTML = originalHtml;
              resetButton.disabled = false;
         }
     } catch (error) {
-        console.error('批量重置失败:', error);
-        showResultModal(false, '批量重置处理失败: ' + error.message);
+        console.error('批量重置处理失败:', error);
+        showResultModal(false, '批量重置处理失败: ' + error.message, false); // 失败后不自动刷新
     }
 }
 
@@ -419,6 +473,111 @@ document.addEventListener('DOMContentLoaded', () => {
                         // 恢复为原始值，以确保准确性
                         valueElement.textContent = valueElement.dataset.originalValue;
                     }
+                    
+                    
+                    window.showVerifyModal = function(type, event) {
+                        // 阻止事件冒泡（如果从按钮点击触发）
+                        if (event) {
+                            event.stopPropagation();
+                        }
+                    
+                        const modalElement = document.getElementById('verifyModal');
+                        const titleElement = document.getElementById('verifyModalTitle');
+                        const messageElement = document.getElementById('verifyModalMessage');
+                        const confirmButton = document.getElementById('confirmVerifyBtn');
+                    
+                        // 获取当前筛选后可见的、且包含 data-fail-count 属性的密钥数量
+                        // 注意：对于验证，我们可能想验证所有筛选出的密钥，无论其 data-fail-count 如何，
+                        // 但为了与重置保持一致，并且通常只验证有效/无效列表中的项，我们保留 data-fail-count 检查。
+                        // 如果要验证所有可见项（包括没有 data-fail-count 的），可以移除 [data-fail-count] 选择器。
+                        const visibleKeyItems = document.querySelectorAll(`#${type}Keys li[data-fail-count]:not([style*="display: none"])`);
+                        const count = visibleKeyItems.length;
+                    
+                        // 设置标题和消息
+                        titleElement.textContent = '批量验证密钥';
+                        if (count > 0) {
+                            messageElement.textContent = `确定要批量验证筛选出的 ${count} 个${type === 'valid' ? '有效' : '无效'}密钥吗？此操作可能需要一些时间。`;
+                            confirmButton.disabled = false; // 确保按钮可用
+                        } else {
+                            messageElement.textContent = `当前没有筛选出可验证的${type === 'valid' ? '有效' : '无效'}密钥。`;
+                            confirmButton.disabled = true; // 没有可验证的密钥时禁用确认按钮
+                        }
+                    
+                        // 设置确认按钮事件
+                        confirmButton.onclick = () => executeVerifyAll(type);
+                    
+                        // 显示模态框
+                        modalElement.classList.remove('hidden');
+                    }
+                    
+                    window.closeVerifyModal = function() {
+                        document.getElementById('verifyModal').classList.add('hidden');
+                    }
+                    
+                    window.executeVerifyAll = async function(type) {
+                        try {
+                            // 关闭确认模态框
+                            closeVerifyModal();
+                    
+                            // 找到对应的验证按钮以显示加载状态 (需要给按钮添加 data-verify-type 属性)
+                            // 或者，我们可以暂时禁用所有按钮或显示一个全局加载指示器
+                            // 这里我们暂时只记录日志，实际UI反馈可以后续增强
+                            console.log(`Starting bulk verification for ${type} keys...`);
+                    
+                            // 获取筛选后可见的密钥
+                            const visibleKeyItems = document.querySelectorAll(`#${type}Keys li[data-fail-count]:not([style*="display: none"]) .key-text`);
+                            const keysToVerify = Array.from(visibleKeyItems).map(span => span.dataset.fullKey);
+                    
+                            if (keysToVerify.length === 0) {
+                                showNotification(`没有需要验证的筛选后${type === 'valid' ? '有效' : '无效'}密钥`, 'warning');
+                                return;
+                            }
+                    
+                            // 显示一个通用的加载提示
+                            showNotification('开始批量验证，请稍候...', 'info');
+                    
+                            // 调用新的后端 API 来验证选定的密钥
+                            const response = await fetch(`/gemini/v1beta/verify-selected-keys`, { // 假设的新 API 端点
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({ keys: keysToVerify }) // 只发送密钥列表
+                            });
+                    
+                            if (!response.ok) {
+                                 let errorMsg = `服务器返回错误: ${response.status}`;
+                                 try {
+                                     const errorData = await response.json();
+                                     errorMsg = errorData.message || errorMsg;
+                                 } catch (e) { /*忽略解析错误*/ }
+                                 throw new Error(errorMsg);
+                            }
+                    
+                            const data = await response.json();
+                    
+                            // 根据验证结果显示模态框
+                            if (data.success) {
+                                // 可以在这里构建更详细的消息，例如显示多少有效多少无效
+                                const message = `批量验证完成。有效: ${data.valid_count}, 无效: ${data.invalid_count}。页面即将刷新。`;
+                                // 验证成功后通常需要刷新页面以更新状态
+                                showResultModal(true, message, true); // autoReload = true
+                            } else {
+                                const errorMsg = data.message || '批量验证失败';
+                                // 失败后不自动刷新
+                                showResultModal(false, '批量验证失败: ' + errorMsg, false);
+                            }
+                    
+                        } catch (error) {
+                            console.error('批量验证处理失败:', error);
+                            // 失败后不自动刷新
+                            showResultModal(false, '批量验证处理失败: ' + error.message, false);
+                        } finally {
+                             // 可以在这里移除加载指示器
+                             console.log("Bulk verification process finished.");
+                        }
+                    }
+                    
                 };
                 
                 requestAnimationFrame(updateCounter);
@@ -460,13 +619,154 @@ document.addEventListener('DOMContentLoaded', () => {
         // 初始加载时应用一次筛选
         filterValidKeys();
     }
+    
+    // --- 批量验证相关函数 (明确挂载到 window) ---
+    
+    window.showVerifyModal = function(type, event) {
+        // 阻止事件冒泡（如果从按钮点击触发）
+        if (event) {
+            event.stopPropagation();
+        }
+    
+        const modalElement = document.getElementById('verifyModal');
+        const titleElement = document.getElementById('verifyModalTitle');
+        const messageElement = document.getElementById('verifyModalMessage');
+        const confirmButton = document.getElementById('confirmVerifyBtn');
+    
+        // 获取当前筛选后可见的、且包含 data-fail-count 属性的密钥数量
+        // 注意：对于验证，我们可能想验证所有筛选出的密钥，无论其 data-fail-count 如何，
+        // 但为了与重置保持一致，并且通常只验证有效/无效列表中的项，我们保留 data-fail-count 检查。
+        // 如果要验证所有可见项（包括没有 data-fail-count 的），可以移除 [data-fail-count] 选择器。
+        const visibleKeyItems = document.querySelectorAll(`#${type}Keys li[data-fail-count]:not([style*="display: none"])`);
+        const count = visibleKeyItems.length;
+    
+        // 设置标题和消息
+        titleElement.textContent = '批量验证密钥';
+        if (count > 0) {
+            messageElement.textContent = `确定要批量验证筛选出的 ${count} 个${type === 'valid' ? '有效' : '无效'}密钥吗？此操作可能需要一些时间。`;
+            confirmButton.disabled = false; // 确保按钮可用
+        } else {
+            messageElement.textContent = `当前没有筛选出可验证的${type === 'valid' ? '有效' : '无效'}密钥。`;
+            confirmButton.disabled = true; // 没有可验证的密钥时禁用确认按钮
+        }
+    
+        // 设置确认按钮事件
+        confirmButton.onclick = () => executeVerifyAll(type);
+    
+        // 显示模态框
+        modalElement.classList.remove('hidden');
+    }
+    
+    window.closeVerifyModal = function() {
+        document.getElementById('verifyModal').classList.add('hidden');
+    }
+    
+    window.executeVerifyAll = async function(type) {
+        try {
+            // 关闭确认模态框
+            closeVerifyModal();
+    
+            // 找到对应的验证按钮以显示加载状态 (需要给按钮添加 data-verify-type 属性)
+            // 或者，我们可以暂时禁用所有按钮或显示一个全局加载指示器
+            // 这里我们暂时只记录日志，实际UI反馈可以后续增强
+            console.log(`Starting bulk verification for ${type} keys...`);
+    
+            // 获取筛选后可见的密钥
+            const visibleKeyItems = document.querySelectorAll(`#${type}Keys li[data-fail-count]:not([style*="display: none"]) .key-text`);
+            const keysToVerify = Array.from(visibleKeyItems).map(span => span.dataset.fullKey);
+    
+            if (keysToVerify.length === 0) {
+                showNotification(`没有需要验证的筛选后${type === 'valid' ? '有效' : '无效'}密钥`, 'warning');
+                return;
+            }
+    
+            // 显示一个通用的加载提示
+            showNotification('开始批量验证，请稍候...', 'info');
+    
+            // 调用新的后端 API 来验证选定的密钥
+            const response = await fetch(`/gemini/v1beta/verify-selected-keys`, { // 假设的新 API 端点
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ keys: keysToVerify }) // 只发送密钥列表
+            });
+    
+            if (!response.ok) {
+                 let errorMsg = `服务器返回错误: ${response.status}`;
+                 try {
+                     const errorData = await response.json();
+                     errorMsg = errorData.message || errorMsg;
+                 } catch (e) { /*忽略解析错误*/ }
+                 throw new Error(errorMsg);
+            }
+    
+            const data = await response.json();
+    
+            // 根据验证结果显示模态框
+            if (data.success) {
+                // 可以在这里构建更详细的消息，例如显示多少有效多少无效
+                const message = `批量验证完成。有效: ${data.valid_count}, 无效: ${data.invalid_count}。页面即将刷新。`;
+                // 验证成功后通常需要刷新页面以更新状态
+                showResultModal(true, message, true); // autoReload = true
+            } else {
+                const errorMsg = data.message || '批量验证失败';
+                // 失败后不自动刷新
+                showResultModal(false, '批量验证失败: ' + errorMsg, false);
+            }
+    
+        } catch (error) {
+            console.error('批量验证处理失败:', error);
+            // 失败后不自动刷新
+            showResultModal(false, '批量验证处理失败: ' + error.message, false);
+        } finally {
+             // 可以在这里移除加载指示器
+             console.log("Bulk verification process finished.");
+        }
+    }
 
-    // 添加自动刷新功能，每60秒刷新一次
-    const autoRefreshInterval = 60000; // 60秒
-    setInterval(() => {
-        console.log('自动刷新 keys_status 页面...');
-        location.reload();
-    }, autoRefreshInterval);
+    // --- 滚动和页面控制 ---
+    // --- 自动刷新控制 ---
+    const autoRefreshToggle = document.getElementById('autoRefreshToggle');
+    const autoRefreshIntervalTime = 60000; // 60秒
+    let autoRefreshTimer = null;
+
+    function startAutoRefresh() {
+        if (autoRefreshTimer) return; // 防止重复启动
+        console.log('启动自动刷新...');
+        autoRefreshTimer = setInterval(() => {
+            console.log('自动刷新 keys_status 页面...');
+            location.reload();
+        }, autoRefreshIntervalTime);
+    }
+
+    function stopAutoRefresh() {
+        if (autoRefreshTimer) {
+            console.log('停止自动刷新...');
+            clearInterval(autoRefreshTimer);
+            autoRefreshTimer = null;
+        }
+    }
+
+    if (autoRefreshToggle) {
+        // 从 localStorage 读取状态并初始化
+        const isAutoRefreshEnabled = localStorage.getItem('autoRefreshEnabled') === 'true';
+        autoRefreshToggle.checked = isAutoRefreshEnabled;
+        if (isAutoRefreshEnabled) {
+            startAutoRefresh();
+        }
+
+        // 添加事件监听器
+        autoRefreshToggle.addEventListener('change', () => {
+            if (autoRefreshToggle.checked) {
+                localStorage.setItem('autoRefreshEnabled', 'true');
+                startAutoRefresh();
+            } else {
+                localStorage.setItem('autoRefreshEnabled', 'false');
+                stopAutoRefresh();
+            }
+        });
+    }
 });
 
 // Service Worker registration

@@ -40,3 +40,12 @@ class GeminiRequest(BaseModel):
     safetySettings: Optional[List[SafetySetting]] = None
     generationConfig: Optional[GenerationConfig] = None
     systemInstruction: Optional[SystemInstruction] = None
+
+
+class ResetSelectedKeysRequest(BaseModel):
+    keys: List[str]
+    key_type: str
+
+
+class VerifySelectedKeysRequest(BaseModel):
+    keys: List[str]

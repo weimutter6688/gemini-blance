@@ -4,7 +4,8 @@ from copy import deepcopy
 from app.config.config import settings
 from app.log.logger import get_gemini_logger
 from app.core.security import SecurityService
-from app.domain.gemini_models import GeminiContent, GeminiRequest
+import asyncio # 导入 asyncio
+from app.domain.gemini_models import GeminiContent, GeminiRequest, ResetSelectedKeysRequest, VerifySelectedKeysRequest # 添加导入
 from app.service.chat.gemini_chat_service import GeminiChatService
 from app.service.key.key_manager import KeyManager, get_key_manager_instance
 from app.service.model.model_service import ModelService
@@ -183,6 +184,62 @@ async def reset_all_key_fail_counts(key_type: str = None, key_manager: KeyManage
     except Exception as e:
         logger.error(f"Failed to reset key failure counts: {str(e)}")
         return JSONResponse({"success": False, "message": f"批量重置失败: {str(e)}"}, status_code=500)
+    
+    
+@router.post("/reset-selected-fail-counts")
+async def reset_selected_key_fail_counts(
+    request: ResetSelectedKeysRequest,
+    key_manager: KeyManager = Depends(get_key_manager)
+):
+    """批量重置选定Gemini API密钥的失败计数"""
+    logger.info("-" * 50 + "reset_selected_gemini_key_fail_counts" + "-" * 50)
+    keys_to_reset = request.keys
+    key_type = request.key_type # 获取类型用于日志记录和响应消息
+    logger.info(f"Received reset request for {len(keys_to_reset)} selected {key_type} keys.")
+
+    if not keys_to_reset:
+        return JSONResponse({"success": False, "message": "没有提供需要重置的密钥"}, status_code=400)
+
+    reset_count = 0
+    errors = []
+
+    try:
+        for key in keys_to_reset:
+            try:
+                result = await key_manager.reset_key_failure_count(key)
+                if result:
+                    reset_count += 1
+                else:
+                    # 记录未找到的密钥，但不视为致命错误
+                    logger.warning(f"Key not found during selective reset: {key}")
+            except Exception as key_error:
+                # 记录单个密钥重置时的错误
+                logger.error(f"Error resetting key {key}: {str(key_error)}")
+                errors.append(f"Key {key}: {str(key_error)}")
+
+        if errors:
+             # 如果有错误，报告部分成功或完全失败
+             error_message = f"批量重置完成，但出现错误: {'; '.join(errors)}"
+             # 确定最终状态码和成功标志
+             final_success = reset_count > 0
+             status_code = 207 if final_success and errors else 500 # 207 Multi-Status if partially successful, 500 if completely failed
+             return JSONResponse({
+                 "success": final_success,
+                 "message": error_message,
+                 "reset_count": reset_count
+             }, status_code=status_code)
+
+        # 完全成功的情况
+        return JSONResponse({
+            "success": True,
+            "message": f"成功重置 {reset_count} 个选定 {key_type} 密钥的失败计数",
+            "reset_count": reset_count
+        })
+    except Exception as e:
+        # 捕获循环外的意外错误
+        logger.error(f"Failed to process reset selected key failure counts request: {str(e)}")
+        return JSONResponse({"success": False, "message": f"批量重置处理失败: {str(e)}"}, status_code=500)
+
 
 
 @router.post("/reset-fail-count/{api_key}")
@@ -235,3 +292,92 @@ async def verify_key(api_key: str, chat_service: GeminiChatService = Depends(get
                 logger.warning(f"Verification exception for key: {api_key}, incrementing failure count")
         
         return JSONResponse({"status": "invalid", "error": str(e)})
+
+
+@router.post("/verify-selected-keys")
+async def verify_selected_keys(
+    request: VerifySelectedKeysRequest,
+    chat_service: GeminiChatService = Depends(get_chat_service),
+    key_manager: KeyManager = Depends(get_key_manager)
+):
+    """批量验证选定Gemini API密钥的有效性"""
+    logger.info("-" * 50 + "verify_selected_gemini_keys" + "-" * 50)
+    keys_to_verify = request.keys
+    logger.info(f"Received verification request for {len(keys_to_verify)} selected keys.")
+
+    if not keys_to_verify:
+        return JSONResponse({"success": False, "message": "没有提供需要验证的密钥"}, status_code=400)
+
+    valid_count = 0
+    invalid_count = 0
+    verification_errors = {} # 存储验证过程中的错误
+
+    async def _verify_single_key(api_key: str):
+        """内部函数，用于验证单个密钥并处理异常"""
+        nonlocal valid_count, invalid_count # 允许修改外部计数器
+        try:
+            # 重用单密钥验证逻辑的核心部分
+            gemini_request = GeminiRequest(
+                contents=[GeminiContent(role="user", parts=[{"text": "hi"}])]
+            )
+            # 注意：这里直接调用 chat_service.generate_content，不依赖于 key_manager 获取密钥
+            await chat_service.generate_content(
+                settings.TEST_MODEL,
+                gemini_request,
+                api_key
+            )
+            # 如果上面没有抛出异常，则认为密钥有效
+            valid_count += 1
+            return api_key, "valid", None
+        except Exception as e:
+            error_message = str(e)
+            logger.warning(f"Key verification failed for {api_key}: {error_message}")
+            # 验证失败时增加失败计数 (使用与 /verify-key 一致的逻辑)
+            async with key_manager.failure_count_lock:
+                if api_key in key_manager.key_failure_counts:
+                    key_manager.key_failure_counts[api_key] += 1
+                    logger.warning(f"Bulk verification exception for key: {api_key}, incrementing failure count")
+                else:
+                     # 如果密钥不在计数中（可能刚添加或从未失败），初始化为1
+                     key_manager.key_failure_counts[api_key] = 1
+                     logger.warning(f"Bulk verification exception for key: {api_key}, initializing failure count to 1")
+            invalid_count += 1
+            return api_key, "invalid", error_message
+
+    # 并发执行所有密钥的验证
+    tasks = [_verify_single_key(key) for key in keys_to_verify]
+    results = await asyncio.gather(*tasks, return_exceptions=True) # return_exceptions=True 捕获任务本身的异常
+
+    # 处理并发执行的结果
+    for result in results:
+        if isinstance(result, Exception):
+            # 捕获 asyncio.gather 可能遇到的异常（例如任务被取消）
+            logger.error(f"An unexpected error occurred during bulk verification task: {result}")
+            # 可以选择如何处理这种任务级别的错误，这里我们简单记录
+            # 也可以将其计入 invalid_count 或单独记录
+        elif result:
+             key, status, error = result
+             if status == "invalid" and error:
+                 verification_errors[key] = error # 记录具体的验证错误信息
+
+    logger.info(f"Bulk verification finished. Valid: {valid_count}, Invalid: {invalid_count}")
+
+    # 根据是否有错误决定最终消息和状态
+    if verification_errors or valid_count + invalid_count != len(keys_to_verify): # 检查是否有错误或任务异常
+        error_summary = "; ".join([f"{k}: {v}" for k, v in verification_errors.items()])
+        message = f"批量验证完成，但出现问题。有效: {valid_count}, 无效: {invalid_count}。错误详情: {error_summary or '任务执行异常'}"
+        return JSONResponse({
+            "success": False, # 标记为失败，因为有错误
+            "message": message,
+            "valid_count": valid_count,
+            "invalid_count": invalid_count,
+            "errors": verification_errors
+        }, status_code=207) # 207 Multi-Status 表示部分成功/失败
+    else:
+        # 完全成功
+        return JSONResponse({
+            "success": True,
+            "message": f"批量验证成功完成。有效: {valid_count}, 无效: {invalid_count}",
+            "valid_count": valid_count,
+            "invalid_count": invalid_count
+        })
