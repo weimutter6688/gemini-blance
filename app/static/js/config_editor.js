@@ -680,29 +680,17 @@ async function executeReset() {
 function showNotification(message, type = 'info') {
     const notification = document.getElementById('notification');
     notification.textContent = message;
-    
-    // 设置适当的样式
-    if (type === 'error') {
-        notification.classList.add('bg-danger-500');
-        notification.classList.remove('bg-black');
-    } else {
-        notification.classList.remove('bg-danger-500');
-        notification.classList.add('bg-black');
-        
-        // 可以为不同类型设置不同的颜色
-        if (type === 'success') {
-            notification.style.backgroundColor = '#22c55e'; // 绿色
-        } else if (type === 'info') {
-            notification.style.backgroundColor = '#3b82f6'; // 蓝色
-        } else if (type === 'warning') {
-            notification.style.backgroundColor = '#f59e0b'; // 橙色
-        }
-    }
-    
-    // 应用过渡效果 - 与keys_status.js中一致
+
+    // 统一样式为黑色半透明，与 keys_status.js 保持一致
+    notification.classList.remove('bg-danger-500');
+    notification.classList.add('bg-black');
+    notification.style.backgroundColor = 'rgba(0,0,0,0.8)';
+    notification.style.color = '#fff';
+
+    // 应用过渡效果
     notification.style.opacity = "1";
     notification.style.transform = "translate(-50%, 0)";
-    
+
     // 设置自动消失
     setTimeout(() => {
         notification.style.opacity = "0";
