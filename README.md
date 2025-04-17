@@ -167,8 +167,8 @@ app/
 | `CREATE_IMAGE_MODEL`         | 可选，图片生成模型                                             | `imagen-3.0-generate-002`                             |
 | `UPLOAD_PROVIDER`            | 可选，图片上传提供商: `smms`, `picgo`, `cloudflare_imgbed`     | `smms`                                                |
 | `SMMS_SECRET_TOKEN`          | 可选，SM.MS图床的API Token                                     | `your-smms-token`                                     |
-| `PICGO_API_KEY`              | 可选，PicoGo图床的API Key                                      | `your-picogo-apikey`                                  |
-| `CLOUDFLARE_IMGBED_URL`      | 可选，CloudFlare 图床上传地址                                  | `https://xxxxxxx.pages.dev/upload`                    |
+| `PICGO_API_KEY`              | 可选，[PicoGo](https://www.picgo.net/)图床的API Key                                      | `your-picogo-apikey`                                  |
+| `CLOUDFLARE_IMGBED_URL`      | 可选，[CloudFlare](https://github.com/MarSeventh/CloudFlare-ImgBed) 图床上传地址                                  | `https://xxxxxxx.pages.dev/upload`                    |
 | `CLOUDFLARE_IMGBED_AUTH_CODE`| 可选，CloudFlare图床的鉴权key                                  | `your-cloudflare-imgber-auth-code`                    |
 | **流式优化器相关**           |                                                          |                                                       |
 | `STREAM_OPTIMIZER_ENABLED`   | 可选，是否启用流式输出优化                                     | `false`                                               |
@@ -199,11 +199,23 @@ app/
 
 欢迎提交 Pull Request 或 Issue。
 
+## 特别鸣谢
+
+特别鸣谢以下项目和平台为本项目提供图床服务:
+
+* [PicGo](https://www.picgo.net/)
+* [SM.MS](https://smms.app/)
+* [CloudFlare-ImgBed](https://github.com/MarSeventh/CloudFlare-ImgBed) 开源项目
+
 ## 🙏 感谢贡献者
 
 感谢所有为本项目做出贡献的开发者！
 
 [![Contributors](https://contrib.rocks/image?repo=snailyp/gemini-balance)](https://github.com/snailyp/gemini-balance/graphs/contributors)
+
+## ⭐ Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=snailyp/gemini-balance&type=Date)](https://star-history.com/#snailyp/gemini-balance&Date)
 
 ## 💖 友情项目
 
