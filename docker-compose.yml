@@ -5,7 +5,6 @@ services:
     image: ghcr.io/snailyp/gemini-balance:latest
     container_name: gemini-balance
     restart: unless-stopped
-    build: .
     ports:
       - "8000:8000"
     env_file:
