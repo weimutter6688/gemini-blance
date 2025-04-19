@@ -22,12 +22,31 @@ logger = get_config_routes_logger()
 class ConfigService:
     """配置服务类，用于管理应用程序配置"""
     
+    # 定义要从 API 中排除的键
+    PROXY_KEYS_TO_EXCLUDE = {"PROXY_ENABLED", "HTTP_PROXY", "HTTPS_PROXY"}
+
     @staticmethod
     async def get_config() -> Dict[str, Any]:
-        return settings.model_dump()
-    
+        """获取当前配置 (排除仅限 env 的代理设置)"""
+        # Use .dict() for Pydantic V1 BaseSettings
+        current_config = settings.dict()
+        # 从返回给 API 的字典中移除代理键
+        for key in ConfigService.PROXY_KEYS_TO_EXCLUDE:
+            current_config.pop(key, None)
+        return current_config
+
     @staticmethod
     async def update_config(config_data: Dict[str, Any]) -> Dict[str, Any]:
+        """更新配置 (不允许通过 API 更新代理设置)"""
+        # 检查传入的数据是否包含不允许修改的代理键
+        for key in ConfigService.PROXY_KEYS_TO_EXCLUDE:
+            if key in config_data:
+                logger.warning(f"Attempted to update env-only setting '{key}' via API. Ignoring.")
+                # Optionally raise an error, or just ignore the key
+                # raise ValueError(f"Setting '{key}' cannot be updated via the API, it must be set in the .env file.")
+                config_data.pop(key) # Remove the key to prevent processing
+
+        # Proceed with updating allowed settings
         for key, value in config_data.items():
             if hasattr(settings, key):
                 setattr(settings, key, value)
@@ -42,8 +61,12 @@ class ConfigService:
         settings_to_insert: List[Dict[str, Any]] = []
         now = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=8)))
 
-        # 准备要更新或插入的数据
+        # 准备要更新或插入的数据 (config_data 已过滤掉代理键)
         for key, value in config_data.items():
+             # 跳过已移除的键（以防万一）
+            if key in ConfigService.PROXY_KEYS_TO_EXCLUDE:
+                continue
+
             # 处理不同类型的值
             if isinstance(value, list):
                 db_value = json.dumps(value)
