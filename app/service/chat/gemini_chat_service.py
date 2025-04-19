@@ -115,7 +115,13 @@ class GeminiChatService:
     """聊天服务"""
 
     def __init__(self, base_url: str, key_manager: KeyManager):
-        self.api_client = GeminiApiClient(base_url, settings.TIME_OUT)
+        self.api_client = GeminiApiClient(
+            base_url,
+            settings.TIME_OUT,
+            proxy_enabled=settings.PROXY_ENABLED,
+            http_proxy=settings.HTTP_PROXY,
+            https_proxy=settings.HTTPS_PROXY
+        )
         self.key_manager = key_manager
         self.response_handler = GeminiResponseHandler()
 

@@ -150,7 +150,13 @@ class OpenAIChatService:
     def __init__(self, base_url: str, key_manager: KeyManager = None):
         self.message_converter = OpenAIMessageConverter()
         self.response_handler = OpenAIResponseHandler(config=None)
-        self.api_client = GeminiApiClient(base_url, settings.TIME_OUT)
+        self.api_client = GeminiApiClient(
+            base_url,
+            settings.TIME_OUT,
+            proxy_enabled=settings.PROXY_ENABLED,
+            http_proxy=settings.HTTP_PROXY,
+            https_proxy=settings.HTTPS_PROXY
+        )
         self.key_manager = key_manager
         self.image_create_service = ImageCreateService()
 

@@ -5,8 +5,8 @@ import datetime
 import json
 from typing import List, Any, Dict, Type
 
-from pydantic import ValidationError
-from pydantic_settings import BaseSettings
+from pydantic import ValidationError, BaseModel
+from pydantic.v1 import BaseSettings
 from sqlalchemy import insert, update, select
 
 from app.core.constants import API_VERSION, DEFAULT_CREATE_IMAGE_MODEL, DEFAULT_FILTER_MODELS, DEFAULT_MODEL, DEFAULT_STREAM_CHUNK_SIZE, DEFAULT_STREAM_LONG_TEXT_THRESHOLD, DEFAULT_STREAM_MAX_DELAY, DEFAULT_STREAM_MIN_DELAY, DEFAULT_STREAM_SHORT_TEXT_THRESHOLD, DEFAULT_TIMEOUT, MAX_RETRIES
@@ -16,11 +16,32 @@ from app.log.logger import get_config_logger
 # from app.database.models import Settings as SettingsModel
 # from app.database.services import get_all_settings # get_all_settings 可能不适合启动时调用，直接查询
 
+# 导入 dotenv 相关函数
+from dotenv import load_dotenv, find_dotenv
+
 logger = get_config_logger()
+
+# === 显式加载 .env 文件 ===
+dotenv_path = find_dotenv()
+if dotenv_path:
+    logger.info(f"Found .env file at: {dotenv_path}")
+    # override=True 确保 .env 文件优先于已存在的环境变量
+    loaded = load_dotenv(dotenv_path=dotenv_path, override=True)
+    logger.info(f".env file loaded successfully: {loaded}")
+else:
+    logger.warning("No .env file found. Relying solely on environment variables and defaults.")
+# === 结束显式加载 .env 文件 ===
 
 
 class Settings(BaseSettings):
     """应用程序配置"""
+    # HTTP 代理配置
+    # 使用 Optional[str] = None 将字段标记为可选
+    from typing import Optional # 确保导入 Optional
+    HTTP_PROXY: Optional[str] = None # HTTP 代理地址，例如 http://user:pass@host:port
+    HTTPS_PROXY: Optional[str] = None # HTTPS 代理地址，例如 http://user:pass@host:port
+    PROXY_ENABLED: bool = False # 是否启用代理 (默认禁用)
+
     # 数据库配置
     MYSQL_HOST: str
     MYSQL_PORT: int
@@ -67,6 +88,13 @@ class Settings(BaseSettings):
     CHECK_INTERVAL_HOURS: int = 1 # 默认检查间隔为1小时
     TIMEZONE: str = "Asia/Shanghai" # 默认时区
 
+    # Pydantic V1 BaseSettings 仍然会尝试加载 .env，但我们已经在上面显式加载了
+    # 保留 Config 以防 Pydantic 内部需要它，但可以移除 env_file 指定
+    class Config:
+        # env_file = ".env" # 不再需要，因为我们显式加载了
+        env_file_encoding = 'utf-8'
+        env_nested_delimiter = '__'
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         # 设置默认AUTH_TOKEN（如果未提供）
@@ -76,6 +104,46 @@ class Settings(BaseSettings):
 # 创建全局配置实例
 settings = Settings()
 
+# === 强制设置 os.environ 代理变量 ===
+import os
+if settings.PROXY_ENABLED:
+    if settings.HTTP_PROXY:
+        os.environ['HTTP_PROXY'] = settings.HTTP_PROXY
+        logger.info(f"Set os.environ['HTTP_PROXY'] = {settings.HTTP_PROXY}")
+    else:
+        # Ensure it's unset if not provided in settings
+        if 'HTTP_PROXY' in os.environ:
+            del os.environ['HTTP_PROXY']
+            logger.info("Unset os.environ['HTTP_PROXY']")
+
+    if settings.HTTPS_PROXY:
+        os.environ['HTTPS_PROXY'] = settings.HTTPS_PROXY
+        logger.info(f"Set os.environ['HTTPS_PROXY'] = {settings.HTTPS_PROXY}")
+    else:
+        # If only HTTP_PROXY is set, httpx usually uses it for HTTPS too.
+        # However, explicitly unsetting HTTPS_PROXY if not in settings might be safer.
+        if 'HTTPS_PROXY' in os.environ:
+            del os.environ['HTTPS_PROXY']
+            logger.info("Unset os.environ['HTTPS_PROXY']")
+else:
+    # If proxy is disabled, ensure env vars are unset
+    if 'HTTP_PROXY' in os.environ:
+        del os.environ['HTTP_PROXY']
+        logger.info("Proxy disabled, unset os.environ['HTTP_PROXY']")
+    if 'HTTPS_PROXY' in os.environ:
+        del os.environ['HTTPS_PROXY']
+        logger.info("Proxy disabled, unset os.environ['HTTPS_PROXY']")
+# === 结束强制设置 os.environ ===
+
+# 移除初始加载调试日志
+# try:
+#     logger.info("="*20 + " Initial Settings Load " + "="*20)
+#     logger.info(f"Initial PROXY_ENABLED: {settings.PROXY_ENABLED} (Type: {type(settings.PROXY_ENABLED)})")
+#     logger.info(f"Initial HTTP_PROXY: {settings.HTTP_PROXY}")
+#     logger.info(f"Initial HTTPS_PROXY: {settings.HTTPS_PROXY}")
+#     logger.info("="*50)
+# except Exception as e:
+#     logger.error(f"Error logging initial settings: {e}")
 def _parse_db_value(key: str, db_value: str, target_type: Type) -> Any:
     """尝试将数据库字符串值解析为目标 Python 类型"""
     try:
@@ -139,10 +207,17 @@ async def sync_initial_settings():
 
         db_settings_map: Dict[str, str] = {s['key']: s['value'] for s in db_settings_raw}
 
-        # 2. 将数据库设置合并到内存 settings (数据库优先)
+        # 定义要从数据库同步中排除的键
+        PROXY_KEYS_TO_EXCLUDE = {"PROXY_ENABLED", "HTTP_PROXY", "HTTPS_PROXY"}
+
+        # 2. 将数据库设置合并到内存 settings (数据库优先), 排除代理键
         updated_in_memory = False
 
         for key, db_value in db_settings_map.items():
+            if key in PROXY_KEYS_TO_EXCLUDE:
+                logger.info(f"Skipping merge for env-only setting '{key}' from database.")
+                continue # 跳过代理相关的键
+
             if hasattr(settings, key):
                 target_type = Settings.__annotations__.get(key)
                 if target_type:
@@ -181,14 +256,16 @@ async def sync_initial_settings():
         if updated_in_memory:
             try:
                 # 重新加载以确保类型转换和验证
-                settings = Settings(**settings.model_dump())
+                # Use .dict() for Pydantic V1 BaseSettings
+                settings = Settings(**settings.dict())
                 logger.info("Settings object re-validated after merging database values.")
             except ValidationError as e:
                  logger.error(f"Validation error after merging database settings: {e}. Settings might be inconsistent.")
 
 
         # 3. 将最终的内存 settings 同步回数据库
-        final_memory_settings = settings.model_dump()
+        # Use .dict() for Pydantic V1 BaseSettings
+        final_memory_settings = settings.dict()
         settings_to_update: List[Dict[str, Any]] = []
         settings_to_insert: List[Dict[str, Any]] = []
         now = datetime.datetime.now(datetime.timezone.utc)
@@ -196,6 +273,10 @@ async def sync_initial_settings():
         existing_db_keys = set(db_settings_map.keys())
 
         for key, value in final_memory_settings.items():
+            if key in PROXY_KEYS_TO_EXCLUDE:
+                 logger.info(f"Skipping sync back to DB for env-only setting '{key}'.")
+                 continue # 跳过代理相关的键
+
             # 序列化值为字符串或 JSON 字符串
             if isinstance(value, list):
                 db_value = json.dumps(value)
