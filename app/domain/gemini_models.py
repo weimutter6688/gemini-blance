@@ -36,7 +36,7 @@ class GeminiContent(BaseModel):
 
 class GeminiRequest(BaseModel):
     contents: List[GeminiContent] = []
-    tools: Optional[Union[List[Dict[str, Any]], Dict[str, Any]]] = []
+    tools: Optional[List[Dict[str, Any]]] = []  # 简化类型，避免使用Union
     safetySettings: Optional[List[SafetySetting]] = None
     generationConfig: Optional[GenerationConfig] = None
     systemInstruction: Optional[SystemInstruction] = None

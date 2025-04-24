@@ -190,4 +190,3 @@ def setup_api_stats_routes(app: FastAPI) -> None:
         except Exception as e:
             logger.error(f"Error fetching API stats details for period {period}: {str(e)}")
             return JSONResponse(content={"error": "Internal server error"}, status_code=500)
-            return {"error": "Internal server error"}, 500
