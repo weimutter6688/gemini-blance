@@ -183,7 +183,7 @@ class OpenAIChatService:
         self,
         request: ChatRequest,
         api_key: str,
-    ) -> Union[Dict[str, Any], AsyncGenerator[str, None]]:
+    ) -> Dict[str, Any]:
         """创建聊天完成"""
         # 转换消息格式
         messages, instruction = self.message_converter.convert(request.messages)
@@ -361,7 +361,7 @@ class OpenAIChatService:
     async def create_image_chat_completion(
         self,
         request: ChatRequest,
-    ) -> Union[Dict[str, Any], AsyncGenerator[str, None]]:
+    ) -> Dict[str, Any]:
 
         image_generate_request = ImageGenerationRequest()
         image_generate_request.prompt = request.messages[-1]["content"]

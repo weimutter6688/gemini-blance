@@ -11,7 +11,7 @@ logger = get_embeddings_logger()
 class EmbeddingService:
 
     async def create_embedding(
-        self, input_text: Union[str, List[str]], model: str, api_key: str
+        self, input_text: List[str], model: str, api_key: str
     ) -> CreateEmbeddingResponse:
         """Create embeddings using OpenAI API"""
         try:
