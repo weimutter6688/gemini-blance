@@ -17,7 +17,7 @@ class ChatRequest(BaseModel):
 
 
 class EmbeddingRequest(BaseModel):
-    input: Union[str, List[str]]
+    input: List[str] = []  # 简化类型，避免使用Union
     model: str = "text-embedding-004"
     encoding_format: Optional[str] = "float"
 
