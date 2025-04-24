@@ -105,7 +105,7 @@ async def add_error_log(
     error_type: Optional[str] = None,
     error_log: Optional[str] = None,
     error_code: Optional[int] = None,
-    request_msg: Optional[Union[Dict[str, Any], str]] = None
+    request_msg: Optional[Dict[str, Any]] = None
 ) -> bool:
     """
     添加错误日志
