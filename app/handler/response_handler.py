@@ -5,7 +5,7 @@ import json
 import random
 import string
 from abc import ABC, abstractmethod
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Tuple
 import time
 import uuid
 from app.config.config import settings
@@ -130,7 +130,7 @@ def _handle_openai_normal_image_response(image_str: str,model: str,finish_reason
     }
 
 
-def _extract_result(response: Dict[str, Any], model: str, stream: bool = False, gemini_format: bool = False) -> tuple[str, List[Dict[str, Any]]]:
+def _extract_result(response: Dict[str, Any], model: str, stream: bool = False, gemini_format: bool = False) -> Tuple[str, List[Dict[str, Any]]]:
     text, tool_calls = "", []
     if stream:
         if response.get("candidates"):

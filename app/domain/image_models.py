@@ -1,5 +1,5 @@
 class ImageMetadata:
-    def __init__(self, width: int, height: int, filename: str, size: int, url: str, delete_url: str | None = None):
+    def __init__(self, width: int, height: int, filename: str, size: int, url: str, delete_url: str = None):
         self.width = width
         self.height = height
         self.filename = filename

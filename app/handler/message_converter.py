@@ -3,7 +3,7 @@
 from abc import ABC, abstractmethod
 import json
 import re
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 import requests
 import base64
 
@@ -14,7 +14,7 @@ class MessageConverter(ABC):
     """消息转换器基类"""
 
     @abstractmethod
-    def convert(self, messages: List[Dict[str, Any]]) -> tuple[List[Dict[str, Any]], Optional[Dict[str, Any]]]:
+    def convert(self, messages: List[Dict[str, Any]]) -> Tuple[List[Dict[str, Any]], Optional[Dict[str, Any]]]:
         pass
 
 def _get_mime_type_and_data(base64_string):
@@ -112,7 +112,7 @@ def _process_text_with_image(text: str) -> List[Dict[str, Any]]:
 class OpenAIMessageConverter(MessageConverter):
     """OpenAI消息格式转换器"""
 
-    def convert(self, messages: List[Dict[str, Any]]) -> tuple[List[Dict[str, Any]], Optional[Dict[str, Any]]]:
+    def convert(self, messages: List[Dict[str, Any]]) -> Tuple[List[Dict[str, Any]], Optional[Dict[str, Any]]]:
         converted_messages = []
         system_instruction_parts = []
 
