@@ -104,36 +104,8 @@ class Settings(BaseSettings):
 # 创建全局配置实例
 settings = Settings()
 
-# === 强制设置 os.environ 代理变量 ===
-import os
-if settings.PROXY_ENABLED:
-    if settings.HTTP_PROXY:
-        os.environ['HTTP_PROXY'] = settings.HTTP_PROXY
-        logger.info(f"Set os.environ['HTTP_PROXY'] = {settings.HTTP_PROXY}")
-    else:
-        # Ensure it's unset if not provided in settings
-        if 'HTTP_PROXY' in os.environ:
-            del os.environ['HTTP_PROXY']
-            logger.info("Unset os.environ['HTTP_PROXY']")
-
-    if settings.HTTPS_PROXY:
-        os.environ['HTTPS_PROXY'] = settings.HTTPS_PROXY
-        logger.info(f"Set os.environ['HTTPS_PROXY'] = {settings.HTTPS_PROXY}")
-    else:
-        # If only HTTP_PROXY is set, httpx usually uses it for HTTPS too.
-        # However, explicitly unsetting HTTPS_PROXY if not in settings might be safer.
-        if 'HTTPS_PROXY' in os.environ:
-            del os.environ['HTTPS_PROXY']
-            logger.info("Unset os.environ['HTTPS_PROXY']")
-else:
-    # If proxy is disabled, ensure env vars are unset
-    if 'HTTP_PROXY' in os.environ:
-        del os.environ['HTTP_PROXY']
-        logger.info("Proxy disabled, unset os.environ['HTTP_PROXY']")
-    if 'HTTPS_PROXY' in os.environ:
-        del os.environ['HTTPS_PROXY']
-        logger.info("Proxy disabled, unset os.environ['HTTPS_PROXY']")
-# === 结束强制设置 os.environ ===
+# 不再设置系统环境变量，只在应用级别使用代理
+logger.info("代理配置将仅在应用级别使用，不设置系统环境变量")
 
 # 移除初始加载调试日志
 # try:

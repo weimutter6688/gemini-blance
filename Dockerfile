@@ -2,13 +2,12 @@ FROM python:3.10-slim
 
 WORKDIR /app
 
-# 设置构建时代理参数（可选）
+# 设置构建时代理参数
 ARG HTTP_PROXY
-ARG HTTPS_PROXY
 
 # 如果提供了代理参数，则设置环境变量用于构建过程
 ENV HTTP_PROXY=${HTTP_PROXY}
-ENV HTTPS_PROXY=${HTTPS_PROXY}
+ENV NO_PROXY=localhost,127.0.0.1,::1,.local,mysql
 
 # 复制依赖文件
 COPY ./requirements.txt /app
@@ -18,6 +17,9 @@ RUN pip install --no-cache-dir -r requirements.txt -i https://pypi.tuna.tsinghua
 
 # 复制应用代码
 COPY ./app /app/app
+
+# 复制测试脚本
+COPY ./test_proxy_in_container.py /app/
 
 # 确保files目录存在
 RUN mkdir -p /app/files

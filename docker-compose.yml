@@ -5,9 +5,7 @@ services:
     build:
       context: .
       args:
-        - HTTP_PROXY=${HTTP_PROXY}
-        - HTTPS_PROXY=${HTTPS_PROXY}
-      network: host
+        - HTTP_PROXY=${CONTAINER_HTTP_PROXY}
     container_name: gemini-balance
     restart: unless-stopped
     ports:
@@ -17,8 +15,8 @@ services:
     environment:
       - MYSQL_HOST=mysql
       - PROXY_ENABLED=${PROXY_ENABLED}
-      - HTTP_PROXY=${HTTP_PROXY}
-      - HTTPS_PROXY=${HTTPS_PROXY}
+      - HTTP_PROXY=${CONTAINER_HTTP_PROXY}
+      - NO_PROXY=localhost,127.0.0.1,::1,.local,mysql
     depends_on:
       mysql:
         condition: service_healthy

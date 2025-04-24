@@ -35,7 +35,10 @@ class RetryHandler:
                     key_manager = kwargs.get("key_manager")
                     if key_manager:
                         old_key = kwargs.get(self.key_arg)
-                        new_key = await key_manager.handle_api_failure(old_key)
+                        new_key = await key_manager.handle_api_failure(old_key, attempt + 1)
+                        if not new_key:
+                            logger.error(f"No valid API key available after attempt {attempt + 1}")
+                            break  # 如果没有有效的API密钥，提前退出重试循环
                         kwargs[self.key_arg] = new_key
                         logger.info(f"Switched to new API key: {new_key}")
 

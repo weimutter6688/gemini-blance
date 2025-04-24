@@ -31,9 +31,8 @@ async def verify_token(request: Request):
 @router.post("/start", summary="启动定时任务")
 async def start_scheduler_endpoint(request: Request): # 添加 request 参数
     """Start the background scheduler task"""
-    """
+    # 取消注释认证检查
     await verify_token(request) # 在函数开始处进行认证检查
-    """
     try:
         logger.info("Received request to start scheduler.")
         start_scheduler() # 调用 key_checker 中的函数
@@ -48,9 +47,8 @@ async def start_scheduler_endpoint(request: Request): # 添加 request 参数
 @router.post("/stop", summary="停止定时任务")
 async def stop_scheduler_endpoint(request: Request): # 添加 request 参数
     """Stop the background scheduler task"""
-    """
+    # 取消注释认证检查
     await verify_token(request) # 在函数开始处进行认证检查
-    """
     try:
         logger.info("Received request to stop scheduler.")
         stop_scheduler() # 调用 key_checker 中的函数

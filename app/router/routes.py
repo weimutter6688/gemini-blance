@@ -178,14 +178,16 @@ def setup_api_stats_routes(app: FastAPI) -> None:
             if not auth_token or not verify_auth_token(auth_token):
                 logger.warning("Unauthorized access attempt to API stats details")
                 # Returning JSON error instead of redirect for API endpoint
-                return {"error": "Unauthorized"}, 401
+                from fastapi.responses import JSONResponse
+                return JSONResponse(content={"error": "Unauthorized"}, status_code=401)
 
             logger.info(f"Fetching API call details for period: {period}")
             details = await get_api_call_details(period)
             return details
         except ValueError as e:
             logger.warning(f"Invalid period requested for API stats details: {period} - {str(e)}")
-            return {"error": str(e)}, 400
+            return JSONResponse(content={"error": str(e)}, status_code=400)
         except Exception as e:
             logger.error(f"Error fetching API stats details for period {period}: {str(e)}")
+            return JSONResponse(content={"error": "Internal server error"}, status_code=500)
             return {"error": "Internal server error"}, 500
